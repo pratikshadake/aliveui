@@ -1,0 +1,48 @@
+{
+  "name": "aliveui",
+  "version": "1.0.0-beta.1",
+  "description": "Motion-first CSS framework. Every surface has depth. Every interaction is alive.",
+  "keywords": ["css", "framework", "motion", "design-system", "ui", "postcss"],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "aliveui": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "commander": "^12.1.0",
+    "fast-glob": "^3.3.2"
+  },
+  "peerDependencies": {
+    "postcss": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "postcss": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "postcss": "^8.4.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
