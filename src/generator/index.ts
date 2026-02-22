@@ -146,23 +146,57 @@ function generateAliveSpecific(classes: Set<string>, _config: ResolvedConfig): s
     // Depth utilities — already in base, but also match here for variant support
     if (cls === 'd1' || cls === 'd2' || cls === 'd3') continue
 
+    // Skip all alive- prefixed classes that are defined in base (component primitives)
+    const aliveBasePrefixes = [
+      'alive-enter', 'alive-exit', 'alive-loop', 'alive-card', 'alive-button',
+      'alive-badge', 'alive-input', 'alive-textarea', 'alive-select', 'alive-checkbox',
+      'alive-radio', 'alive-switch', 'alive-avatar', 'alive-skeleton', 'alive-progress',
+      'alive-separator', 'alive-alert', 'alive-tooltip', 'alive-modal', 'alive-drawer',
+      'alive-nav', 'alive-tabs', 'alive-tab', 'alive-dropdown', 'alive-table',
+      'alive-chip', 'alive-stack', 'alive-container', 'alive-cluster', 'alive-focus',
+      'alive-overlay', 'alive-toast', 'alive-command', 'alive-popover', 'alive-sidebar',
+      'alive-backdrop', 'alive-sr-only',
+    ]
+    if (aliveBasePrefixes.some(p => cls === p || cls.startsWith(p + '-'))) continue
+
     // Group utility
     if (cls === 'group') {
       rules.push(`.${cls} {}`) // marker class
       continue
     }
 
-    // Alive stagger gap override
+    // Stagger gap override: stagger-{ms}
     const staggerMatch = cls.match(/^stagger-(\d+)$/)
     if (staggerMatch) {
       rules.push(`.${cls} { --alive-stagger-gap: ${staggerMatch[1]}ms; }`)
       continue
     }
 
-    // Alive index (for stagger)
+    // Stagger index: alive-index-{n}
     const indexMatch = cls.match(/^alive-index-(\d+)$/)
     if (indexMatch) {
       rules.push(`.${cls} { --alive-index: ${indexMatch[1]}; }`)
+      continue
+    }
+
+    // Custom duration override: duration-{ms}
+    const durationMatch = cls.match(/^duration-(\d+)$/)
+    if (durationMatch) {
+      rules.push(`.${cls} { --alive-duration: ${durationMatch[1]}ms; }`)
+      continue
+    }
+
+    // Delay: delay-{ms}
+    const delayMatch = cls.match(/^delay-(\d+)$/)
+    if (delayMatch) {
+      rules.push(`.${cls} { animation-delay: ${delayMatch[1]}ms; }`)
+      continue
+    }
+
+    // Motion tokens as animation-duration shorthand: motion-{ms}
+    const motionMsMatch = cls.match(/^motion-(\d+)$/)
+    if (motionMsMatch) {
+      rules.push(`.${cls} { --alive-duration: ${motionMsMatch[1]}ms !important; }`)
       continue
     }
 
@@ -175,8 +209,6 @@ function generateAliveSpecific(classes: Set<string>, _config: ResolvedConfig): s
       rules.push(`.${cls} > * + * { border-top-width: 1px; border-top-style: solid; }`)
       continue
     }
-
-    // Divide color
     const divideColorMatch = cls.match(/^divide-([a-z]+)(?:-(\d+))?$/)
     if (divideColorMatch) {
       rules.push(`.${cls} > * + * { border-color: inherit; }`)
@@ -189,27 +221,85 @@ function generateAliveSpecific(classes: Set<string>, _config: ResolvedConfig): s
 
     // Resize
     if (cls === 'resize-none') { rules.push(`.${cls} { resize: none; }`); continue }
-    if (cls === 'resize') { rules.push(`.${cls} { resize: both; }`); continue }
-    if (cls === 'resize-y') { rules.push(`.${cls} { resize: vertical; }`); continue }
-    if (cls === 'resize-x') { rules.push(`.${cls} { resize: horizontal; }`); continue }
+    if (cls === 'resize')      { rules.push(`.${cls} { resize: both; }`); continue }
+    if (cls === 'resize-y')    { rules.push(`.${cls} { resize: vertical; }`); continue }
+    if (cls === 'resize-x')    { rules.push(`.${cls} { resize: horizontal; }`); continue }
 
     // Scroll snap
-    if (cls === 'snap-none') { rules.push(`.${cls} { scroll-snap-type: none; }`); continue }
-    if (cls === 'snap-x') { rules.push(`.${cls} { scroll-snap-type: x mandatory; }`); continue }
-    if (cls === 'snap-y') { rules.push(`.${cls} { scroll-snap-type: y mandatory; }`); continue }
-    if (cls === 'snap-start') { rules.push(`.${cls} { scroll-snap-align: start; }`); continue }
+    if (cls === 'snap-none')   { rules.push(`.${cls} { scroll-snap-type: none; }`); continue }
+    if (cls === 'snap-x')      { rules.push(`.${cls} { scroll-snap-type: x mandatory; }`); continue }
+    if (cls === 'snap-y')      { rules.push(`.${cls} { scroll-snap-type: y mandatory; }`); continue }
+    if (cls === 'snap-start')  { rules.push(`.${cls} { scroll-snap-align: start; }`); continue }
     if (cls === 'snap-center') { rules.push(`.${cls} { scroll-snap-align: center; }`); continue }
-    if (cls === 'snap-end') { rules.push(`.${cls} { scroll-snap-align: end; }`); continue }
+    if (cls === 'snap-end')    { rules.push(`.${cls} { scroll-snap-align: end; }`); continue }
+
+    // Pointer events
+    if (cls === 'pointer-events-none') { rules.push(`.${cls} { pointer-events: none; }`); continue }
+    if (cls === 'pointer-events-auto') { rules.push(`.${cls} { pointer-events: auto; }`); continue }
 
     // Screen reader
     if (cls === 'sr-only') {
-      rules.push(`.${cls} {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border-width: 0;\n}`)
+      rules.push(`.${cls} { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`)
       continue
     }
     if (cls === 'not-sr-only') {
-      rules.push(`.${cls} {\n  position: static;\n  width: auto;\n  height: auto;\n  padding: 0;\n  margin: 0;\n  overflow: visible;\n  clip: auto;\n  white-space: normal;\n}`)
+      rules.push(`.${cls} { position: static; width: auto; height: auto; padding: 0; margin: 0; overflow: visible; clip: auto; white-space: normal; }`)
       continue
     }
+
+    // Will-change
+    if (cls === 'will-change-auto')      { rules.push(`.${cls} { will-change: auto; }`); continue }
+    if (cls === 'will-change-transform') { rules.push(`.${cls} { will-change: transform; }`); continue }
+    if (cls === 'will-change-opacity')   { rules.push(`.${cls} { will-change: opacity; }`); continue }
+
+    // Line clamp
+    const lineClampMatch = cls.match(/^line-clamp-(\d+)$/)
+    if (lineClampMatch) {
+      const n = lineClampMatch[1]
+      rules.push(`.${cls} { overflow: hidden; display: -webkit-box; -webkit-line-clamp: ${n}; -webkit-box-orient: vertical; }`)
+      continue
+    }
+
+    // Aspect ratio
+    if (cls === 'aspect-square') { rules.push(`.${cls} { aspect-ratio: 1 / 1; }`); continue }
+    if (cls === 'aspect-video')  { rules.push(`.${cls} { aspect-ratio: 16 / 9; }`); continue }
+    if (cls === 'aspect-auto')   { rules.push(`.${cls} { aspect-ratio: auto; }`); continue }
+
+    // Object fit
+    if (cls === 'object-contain') { rules.push(`.${cls} { object-fit: contain; }`); continue }
+    if (cls === 'object-cover')   { rules.push(`.${cls} { object-fit: cover; }`); continue }
+    if (cls === 'object-fill')    { rules.push(`.${cls} { object-fit: fill; }`); continue }
+    if (cls === 'object-none')    { rules.push(`.${cls} { object-fit: none; }`); continue }
+    if (cls === 'object-scale')   { rules.push(`.${cls} { object-fit: scale-down; }`); continue }
+
+    // Mix blend mode
+    if (cls === 'mix-blend-multiply')  { rules.push(`.${cls} { mix-blend-mode: multiply; }`); continue }
+    if (cls === 'mix-blend-screen')    { rules.push(`.${cls} { mix-blend-mode: screen; }`); continue }
+    if (cls === 'mix-blend-overlay')   { rules.push(`.${cls} { mix-blend-mode: overlay; }`); continue }
+    if (cls === 'mix-blend-normal')    { rules.push(`.${cls} { mix-blend-mode: normal; }`); continue }
+
+    // Isolation
+    if (cls === 'isolate')        { rules.push(`.${cls} { isolation: isolate; }`); continue }
+    if (cls === 'isolation-auto') { rules.push(`.${cls} { isolation: auto; }`); continue }
+
+    // Touch action
+    if (cls === 'touch-auto')         { rules.push(`.${cls} { touch-action: auto; }`); continue }
+    if (cls === 'touch-none')         { rules.push(`.${cls} { touch-action: none; }`); continue }
+    if (cls === 'touch-pan-x')        { rules.push(`.${cls} { touch-action: pan-x; }`); continue }
+    if (cls === 'touch-pan-y')        { rules.push(`.${cls} { touch-action: pan-y; }`); continue }
+    if (cls === 'touch-manipulation') { rules.push(`.${cls} { touch-action: manipulation; }`); continue }
+
+    // User select
+    if (cls === 'select-none') { rules.push(`.${cls} { user-select: none; }`); continue }
+    if (cls === 'select-text') { rules.push(`.${cls} { user-select: text; }`); continue }
+    if (cls === 'select-all')  { rules.push(`.${cls} { user-select: all; }`); continue }
+    if (cls === 'select-auto') { rules.push(`.${cls} { user-select: auto; }`); continue }
+
+    // Break
+    if (cls === 'break-normal') { rules.push(`.${cls} { overflow-wrap: normal; word-break: normal; }`); continue }
+    if (cls === 'break-words')  { rules.push(`.${cls} { overflow-wrap: break-word; }`); continue }
+    if (cls === 'break-all')    { rules.push(`.${cls} { word-break: break-all; }`); continue }
+    if (cls === 'break-keep')   { rules.push(`.${cls} { word-break: keep-all; }`); continue }
   }
 
   return rules

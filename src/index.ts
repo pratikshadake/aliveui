@@ -44,3 +44,9 @@ const aliveui: PluginCreator<Partial<AliveUIConfig>> = (userConfig = {}) => {
 aliveui.postcss = true
 
 export default aliveui
+
+// CJS interop: make require('aliveui') return the function directly
+if (typeof module !== 'undefined') {
+  module.exports = aliveui
+  module.exports.default = aliveui
+}
