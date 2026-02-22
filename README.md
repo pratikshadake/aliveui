@@ -9,7 +9,7 @@ Modern interfaces are visually structured but temporally dead. AliveUI treats mo
 ## Install
 
 ```bash
-npm install aliveui
+npm install @pratikshadake/aliveui
 ```
 
 ---
@@ -23,7 +23,7 @@ Add to `postcss.config.js`:
 ```js
 module.exports = {
   plugins: {
-    aliveui: {
+    '@pratikshadake/aliveui': {
       content: ['./src/**/*.{html,js,jsx,ts,tsx,vue,svelte}'],
     },
   },
@@ -41,19 +41,19 @@ In your CSS entry file:
 
 ```bash
 # Create config
-npx aliveui init
+npx @pratikshadake/aliveui init
 
 # Build once
-npx aliveui build
+npx @pratikshadake/aliveui build
 
 # Watch mode
-npx aliveui watch
+npx @pratikshadake/aliveui watch
 ```
 
 Config file (`aliveui.config.js`):
 
 ```js
-/** @type {import('aliveui').AliveUIConfig} */
+/** @type {import('@pratikshadake/aliveui').AliveUIConfig} */
 module.exports = {
   content: ['./src/**/*.{html,js,jsx,ts,tsx}'],
   output: './public/alive.css',
@@ -267,7 +267,7 @@ AliveUI ships three primitive components — thin semantic wrappers for common p
 ## Configuration
 
 ```js
-/** @type {import('aliveui').AliveUIConfig} */
+/** @type {import('@pratikshadake/aliveui').AliveUIConfig} */
 module.exports = {
   content: ['./src/**/*.{html,jsx,tsx}'],
   output: './public/alive.css',
@@ -315,4 +315,3 @@ These are not conventions. They are the system.
 ## License
 
 MIT
-# aliveui
