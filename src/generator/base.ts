@@ -1331,5 +1331,186 @@ export function generateBase(_config: ResolvedConfig): string {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* ── Kbd ─────────────────────────────────────────────────────────── */
+
+.alive-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1875rem 0.4375rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: rgba(0,0,0,0.65);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.14);
+  border-bottom-width: 2px;
+  border-radius: 0.3125rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ── Form group ──────────────────────────────────────────────────── */
+
+.alive-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.alive-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(0,0,0,0.8);
+}
+.alive-label-required::after {
+  content: ' *';
+  color: #dc2626;
+}
+.alive-helper {
+  font-size: 0.8125rem;
+  color: rgba(0,0,0,0.45);
+  line-height: 1.4;
+}
+.alive-error-msg {
+  font-size: 0.8125rem;
+  color: #dc2626;
+  line-height: 1.4;
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────────────── */
+
+.alive-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: rgba(0,0,0,0.45);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.alive-breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.alive-breadcrumb-item a {
+  color: rgba(0,0,0,0.55);
+  text-decoration: none;
+  transition: color var(--alive-duration-fast) var(--alive-ease-standard);
+}
+.alive-breadcrumb-item a:hover { color: rgba(0,0,0,0.9); }
+.alive-breadcrumb-item[aria-current="page"] { color: rgba(0,0,0,0.85); font-weight: 500; }
+.alive-breadcrumb-sep {
+  color: rgba(0,0,0,0.25);
+  user-select: none;
+  font-size: 0.8125rem;
+}
+
+/* ── Accordion ───────────────────────────────────────────────────── */
+
+.alive-accordion {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.alive-accordion-item {
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.alive-accordion-item:last-child { border-bottom: none; }
+.alive-accordion-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(0,0,0,0.8);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 0.75rem;
+  transition: background var(--alive-duration-fast) var(--alive-ease-standard), color var(--alive-duration-fast) var(--alive-ease-standard);
+}
+.alive-accordion-trigger:hover { background: rgba(0,0,0,0.025); color: rgba(0,0,0,0.9); }
+.alive-accordion-icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: rgba(0,0,0,0.35);
+  transition: transform var(--alive-duration-normal) var(--alive-ease-emphasized);
+}
+.alive-accordion-item.is-open .alive-accordion-icon { transform: rotate(180deg); }
+.alive-accordion-content {
+  overflow: hidden;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(0,0,0,0.6);
+}
+.alive-accordion-content-inner { padding: 0 1.25rem 1.25rem; }
+
+/* ── Pagination ──────────────────────────────────────────────────── */
+
+.alive-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.alive-page-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  color: rgba(0,0,0,0.55);
+  cursor: pointer;
+  background: transparent;
+  text-decoration: none;
+  user-select: none;
+  transition:
+    background    var(--alive-duration-fast) var(--alive-ease-standard),
+    border-color  var(--alive-duration-fast) var(--alive-ease-standard),
+    color         var(--alive-duration-fast) var(--alive-ease-standard);
+}
+.alive-page-item:hover { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.85); }
+.alive-page-item.is-active {
+  background: rgba(0,0,0,0.08);
+  border-color: rgba(0,0,0,0.14);
+  color: rgba(0,0,0,0.9);
+  font-weight: 600;
+  cursor: default;
+}
+.alive-page-item:disabled,
+.alive-page-item.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.alive-page-gap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  color: rgba(0,0,0,0.3);
+  user-select: none;
+}
 `
 }
