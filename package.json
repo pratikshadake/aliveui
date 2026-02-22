@@ -1,8 +1,15 @@
 {
-  "name": "aliveui",
+  "name": "@pratikshadake/aliveui",
   "version": "1.0.0-beta.1",
   "description": "Motion-first CSS framework. Every surface has depth. Every interaction is alive.",
-  "keywords": ["css", "framework", "motion", "design-system", "ui", "postcss"],
+  "keywords": [
+    "css",
+    "framework",
+    "motion",
+    "design-system",
+    "ui",
+    "postcss"
+  ],
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -15,7 +22,7 @@
     }
   },
   "bin": {
-    "aliveui": "./dist/cli.js"
+    "aliveui": "dist/cli.js"
   },
   "files": [
     "dist",
