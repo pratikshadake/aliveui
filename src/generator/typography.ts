@@ -1,5 +1,9 @@
 import type { ResolvedConfig } from '../types'
 
+function hasOwn(obj: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key)
+}
+
 export function generateTypography(classes: Set<string>, config: ResolvedConfig): string[] {
   const { fontSize, fontWeight, lineHeight } = config.theme
   const rules: string[] = []
@@ -20,14 +24,14 @@ function matchTypography(
 ): string | null {
   // text-{size}
   const textSizeMatch = cls.match(/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/)
-  if (textSizeMatch && fontSize[textSizeMatch[1]]) {
+  if (textSizeMatch && hasOwn(fontSize as Record<string, unknown>, textSizeMatch[1])) {
     const [size, lh] = fontSize[textSizeMatch[1]]
     return `.${cls} {\n  font-size: ${size};\n  line-height: ${lh};\n}`
   }
 
   // font-{weight}
   const fontWeightMatch = cls.match(/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/)
-  if (fontWeightMatch && fontWeight[fontWeightMatch[1]]) {
+  if (fontWeightMatch && hasOwn(fontWeight, fontWeightMatch[1])) {
     return `.${cls} { font-weight: ${fontWeight[fontWeightMatch[1]]}; }`
   }
 
@@ -38,7 +42,7 @@ function matchTypography(
 
   // leading-{size}
   const leadingMatch = cls.match(/^leading-(.+)$/)
-  if (leadingMatch && lineHeight[leadingMatch[1]]) {
+  if (leadingMatch && hasOwn(lineHeight, leadingMatch[1])) {
     return `.${cls} { line-height: ${lineHeight[leadingMatch[1]]}; }`
   }
 
@@ -52,7 +56,7 @@ function matchTypography(
     widest: '0.1em',
   }
   const trackingMatch = cls.match(/^tracking-(.+)$/)
-  if (trackingMatch && trackingMap[trackingMatch[1]]) {
+  if (trackingMatch && Object.prototype.hasOwnProperty.call(trackingMap, trackingMatch[1])) {
     return `.${cls} { letter-spacing: ${trackingMap[trackingMatch[1]]}; }`
   }
 

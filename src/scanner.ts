@@ -76,6 +76,15 @@ function splitAndAdd(value: string, classes: Set<string>): void {
   }
 }
 
+// Object.prototype property names that match the class-like regex but are never CSS classes.
+// Accessing these on a plain theme object (e.g. spacing['constructor']) returns the inherited
+// function instead of undefined, which is truthy and would generate invalid CSS.
+const JS_PROTOTYPE_PROPS = new Set([
+  'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty',
+  'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString',
+  '__proto__', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
+])
+
 // Quick heuristic to filter out non-class tokens
 function isLikelyClass(token: string): boolean {
   if (!token || token.length < 1 || token.length > 60) return false
@@ -86,5 +95,8 @@ function isLikelyClass(token: string): boolean {
   // Skip common non-class patterns
   if (token.includes('://')) return false
   if (token.startsWith('http')) return false
+  // Skip JS prototype-inherited property names — accessing these on a plain object
+  // returns a function, not undefined, which would produce invalid CSS rules
+  if (JS_PROTOTYPE_PROPS.has(token)) return false
   return true
 }

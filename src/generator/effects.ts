@@ -1,5 +1,9 @@
 import type { ResolvedConfig } from '../types'
 
+function has(obj: Record<string, string>, key: string): boolean {
+  return typeof obj[key] === 'string'
+}
+
 export function generateEffects(classes: Set<string>, config: ResolvedConfig): string[] {
   const { opacity, zIndex, boxShadow, borderRadius } = config.theme
   const rules: string[] = []
@@ -19,13 +23,13 @@ function matchEffects(
 ): string | null {
   // Opacity
   const opacityMatch = cls.match(/^opacity-(.+)$/)
-  if (opacityMatch && opacity[opacityMatch[1]]) {
+  if (opacityMatch && has(opacity, opacityMatch[1])) {
     return `.${cls} {\n  opacity: ${opacity[opacityMatch[1]]};\n  transition-property: opacity;\n  transition-duration: var(--alive-duration, 0ms);\n  transition-timing-function: var(--alive-ease, linear);\n}`
   }
 
   // Z-index
   const zMatch = cls.match(/^z-(.+)$/)
-  if (zMatch && zIndex[zMatch[1]]) {
+  if (zMatch && has(zIndex, zMatch[1])) {
     return `.${cls} { z-index: ${zIndex[zMatch[1]]}; }`
   }
 
@@ -33,10 +37,10 @@ function matchEffects(
   const shadowMatch = cls.match(/^shadow(?:-(.+))?$/)
   if (shadowMatch) {
     const key = shadowMatch[1] ?? 'DEFAULT'
-    if (boxShadow[key]) {
+    if (has(boxShadow, key)) {
       return `.${cls} { box-shadow: ${boxShadow[key]}; }`
     }
-    if (!shadowMatch[1]) {
+    if (!shadowMatch[1] && has(boxShadow, 'DEFAULT')) {
       return `.${cls} { box-shadow: ${boxShadow['DEFAULT']}; }`
     }
   }
@@ -45,32 +49,36 @@ function matchEffects(
   const roundedMatch = cls.match(/^rounded(?:-(.+))?$/)
   if (roundedMatch) {
     const key = roundedMatch[1] ?? 'DEFAULT'
-    if (borderRadius[key]) return `.${cls} { border-radius: ${borderRadius[key]}; }`
-    if (!roundedMatch[1]) return `.${cls} { border-radius: ${borderRadius['DEFAULT']}; }`
+    if (has(borderRadius, key)) return `.${cls} { border-radius: ${borderRadius[key]}; }`
+    if (!roundedMatch[1] && has(borderRadius, 'DEFAULT')) return `.${cls} { border-radius: ${borderRadius['DEFAULT']}; }`
   }
 
   // Directional border radius
   const roundedTMatch = cls.match(/^rounded-t(?:-(.+))?$/)
   if (roundedTMatch) {
-    const val = borderRadius[roundedTMatch[1] ?? 'DEFAULT'] ?? borderRadius['DEFAULT']
+    const rkey = roundedTMatch[1] ?? 'DEFAULT'
+    const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
     if (val) return `.${cls} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`
   }
 
   const roundedBMatch = cls.match(/^rounded-b(?:-(.+))?$/)
   if (roundedBMatch) {
-    const val = borderRadius[roundedBMatch[1] ?? 'DEFAULT'] ?? borderRadius['DEFAULT']
+    const rkey = roundedBMatch[1] ?? 'DEFAULT'
+    const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
     if (val) return `.${cls} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`
   }
 
   const roundedLMatch = cls.match(/^rounded-l(?:-(.+))?$/)
   if (roundedLMatch) {
-    const val = borderRadius[roundedLMatch[1] ?? 'DEFAULT'] ?? borderRadius['DEFAULT']
+    const rkey = roundedLMatch[1] ?? 'DEFAULT'
+    const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
     if (val) return `.${cls} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`
   }
 
   const roundedRMatch = cls.match(/^rounded-r(?:-(.+))?$/)
   if (roundedRMatch) {
-    const val = borderRadius[roundedRMatch[1] ?? 'DEFAULT'] ?? borderRadius['DEFAULT']
+    const rkey = roundedRMatch[1] ?? 'DEFAULT'
+    const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
     if (val) return `.${cls} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`
   }
 
@@ -131,17 +139,17 @@ function matchEffects(
     '100': '1', '105': '1.05', '110': '1.1', '125': '1.25', '150': '1.5',
   }
   const scaleMatch = cls.match(/^scale-(\d+)$/)
-  if (scaleMatch && scaleMap[scaleMatch[1]]) {
+  if (scaleMatch && has(scaleMap, scaleMatch[1])) {
     return `.${cls} { transform: scale(${scaleMap[scaleMatch[1]]}); }`
   }
 
   const scaleXMatch = cls.match(/^scale-x-(\d+)$/)
-  if (scaleXMatch && scaleMap[scaleXMatch[1]]) {
+  if (scaleXMatch && has(scaleMap, scaleXMatch[1])) {
     return `.${cls} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`
   }
 
   const scaleYMatch = cls.match(/^scale-y-(\d+)$/)
-  if (scaleYMatch && scaleMap[scaleYMatch[1]]) {
+  if (scaleYMatch && has(scaleMap, scaleYMatch[1])) {
     return `.${cls} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`
   }
 
@@ -187,7 +195,7 @@ function matchEffects(
       xl: '24px', '2xl': '40px', '3xl': '64px',
     }
     const key = blurMatch[1] ?? 'DEFAULT'
-    if (blurMap[key]) return `.${cls} { filter: blur(${blurMap[key]}); }`
+    if (has(blurMap, key)) return `.${cls} { filter: blur(${blurMap[key]}); }`
   }
 
   const backdropBlurMatch = cls.match(/^backdrop-blur(?:-(.+))?$/)
@@ -197,7 +205,7 @@ function matchEffects(
       xl: '24px', '2xl': '40px', '3xl': '64px',
     }
     const key = backdropBlurMatch[1] ?? 'DEFAULT'
-    if (blurMap[key]) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`
+    if (has(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`
   }
 
   return null

@@ -25,10 +25,11 @@ export function resolveColor(
   name: string,
   shade?: string,
 ): string | null {
+  if (!Object.prototype.hasOwnProperty.call(colors, name)) return null
   const entry = colors[name]
-  if (!entry) return null
   if (typeof entry === 'string') return entry
   if (!shade) return null
+  if (!Object.prototype.hasOwnProperty.call(entry, shade)) return null
   return entry[shade] ?? null
 }
 

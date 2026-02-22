@@ -1,5 +1,9 @@
 import type { ResolvedConfig } from '../types'
 
+function has(obj: Record<string, string>, key: string): boolean {
+  return typeof obj[key] === 'string'
+}
+
 export function generateSizing(classes: Set<string>, config: ResolvedConfig): string[] {
   const { spacing } = config.theme
   const rules: string[] = []
@@ -35,8 +39,8 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (key === 'min') return `.${cls} { width: min-content; }`
     if (key === 'max') return `.${cls} { width: max-content; }`
     if (key === 'fit') return `.${cls} { width: fit-content; }`
-    if (fractions[key]) return `.${cls} { width: ${fractions[key]}; }`
-    if (spacing[key]) return `.${cls} { width: ${spacing[key]}; }`
+    if (has(fractions, key)) return `.${cls} { width: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${cls} { width: ${spacing[key]}; }`
   }
 
   // Min width
@@ -48,7 +52,7 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (key === 'min') return `.${cls} { min-width: min-content; }`
     if (key === 'max') return `.${cls} { min-width: max-content; }`
     if (key === 'fit') return `.${cls} { min-width: fit-content; }`
-    if (spacing[key]) return `.${cls} { min-width: ${spacing[key]}; }`
+    if (has(spacing, key)) return `.${cls} { min-width: ${spacing[key]}; }`
   }
 
   // Max width
@@ -60,7 +64,7 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     'screen-xl': '1280px', 'screen-2xl': '1536px',
   }
   const maxWMatch = cls.match(/^max-w-(.+)$/)
-  if (maxWMatch && maxWMap[maxWMatch[1]]) {
+  if (maxWMatch && has(maxWMap, maxWMatch[1])) {
     return `.${cls} { max-width: ${maxWMap[maxWMatch[1]]}; }`
   }
 
@@ -76,8 +80,8 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (key === 'min') return `.${cls} { height: min-content; }`
     if (key === 'max') return `.${cls} { height: max-content; }`
     if (key === 'fit') return `.${cls} { height: fit-content; }`
-    if (fractions[key]) return `.${cls} { height: ${fractions[key]}; }`
-    if (spacing[key]) return `.${cls} { height: ${spacing[key]}; }`
+    if (has(fractions, key)) return `.${cls} { height: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${cls} { height: ${spacing[key]}; }`
   }
 
   // Min height
@@ -90,7 +94,7 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (key === 'svh') return `.${cls} { min-height: 100svh; }`
     if (key === 'dvh') return `.${cls} { min-height: 100dvh; }`
     if (key === 'fit') return `.${cls} { min-height: fit-content; }`
-    if (spacing[key]) return `.${cls} { min-height: ${spacing[key]}; }`
+    if (has(spacing, key)) return `.${cls} { min-height: ${spacing[key]}; }`
   }
 
   // Max height
@@ -103,7 +107,7 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (key === 'svh') return `.${cls} { max-height: 100svh; }`
     if (key === 'dvh') return `.${cls} { max-height: 100dvh; }`
     if (key === 'fit') return `.${cls} { max-height: fit-content; }`
-    if (spacing[key]) return `.${cls} { max-height: ${spacing[key]}; }`
+    if (has(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`
   }
 
   return null
