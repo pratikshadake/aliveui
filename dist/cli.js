@@ -1164,7 +1164,7 @@ function generateBase(_config) {
   display: flex;
 }
 .alive-avatar-group .alive-avatar {
-  border: 2px solid var(--alive-avatar-ring, #fff);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
   margin-left: -0.5rem;
 }
 .alive-avatar-group .alive-avatar:first-child {
