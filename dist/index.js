@@ -813,6 +813,15 @@ function generateBase(_config) {
     opacity: 1;
     transform: none;
   }
+
+  /* depth system \u2014 disable hover lift and active press */
+  .d2,
+  .d2:hover,
+  .d2:active {
+    transform: none;
+    transition: none;
+    box-shadow: var(--alive-shadow-d2);
+  }
 }
 
 /* \u2500\u2500 Motion override utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
@@ -2157,11 +2166,20 @@ function resolveColor(colors, name, shade) {
   return entry[shade] ?? null;
 }
 function parseVariants(cls) {
-  const parts = cls.split(":");
-  return {
-    variants: parts.slice(0, -1),
-    base: parts[parts.length - 1]
-  };
+  const variants = [];
+  let depth = 0;
+  let current = "";
+  for (const ch of cls) {
+    if (ch === "[") depth++;
+    else if (ch === "]") depth--;
+    else if (ch === ":" && depth === 0) {
+      variants.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  return { variants, base: current };
 }
 
 // src/generator/colors.ts
