@@ -9,7 +9,7 @@ Modern interfaces are visually structured but temporally dead. AliveUI treats mo
 ## Install
 
 ```bash
-npm install @pratikshadake/aliveui
+npm install @alivecss/aliveui
 ```
 
 ---
@@ -23,7 +23,7 @@ Add to `postcss.config.js`:
 ```js
 module.exports = {
   plugins: {
-    '@pratikshadake/aliveui': {
+    '@alivecss/aliveui': {
       content: ['./src/**/*.{html,js,jsx,ts,tsx,vue,svelte}'],
     },
   },
@@ -41,19 +41,19 @@ In your CSS entry file:
 
 ```bash
 # Create config
-npx @pratikshadake/aliveui init
+npx @alivecss/aliveui init
 
 # Build once
-npx @pratikshadake/aliveui build
+npx @alivecss/aliveui build
 
 # Watch mode
-npx @pratikshadake/aliveui watch
+npx @alivecss/aliveui watch
 ```
 
 Config file (`aliveui.config.js`):
 
 ```js
-/** @type {import('@pratikshadake/aliveui').AliveUIConfig} */
+/** @type {import('@alivecss/aliveui').AliveUIConfig} */
 module.exports = {
   content: ['./src/**/*.{html,js,jsx,ts,tsx}'],
   output: './public/alive.css',
@@ -267,7 +267,7 @@ AliveUI ships three primitive components — thin semantic wrappers for common p
 ## Configuration
 
 ```js
-/** @type {import('@pratikshadake/aliveui').AliveUIConfig} */
+/** @type {import('@alivecss/aliveui').AliveUIConfig} */
 module.exports = {
   content: ['./src/**/*.{html,jsx,tsx}'],
   output: './public/alive.css',

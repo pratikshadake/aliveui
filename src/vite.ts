@@ -5,7 +5,7 @@
  * `@aliveui` directives in your CSS are processed automatically.
  *
  * Usage in vite.config.ts:
- *   import { aliveUIVite } from '@pratikshadake/aliveui/vite'
+ *   import { aliveUIVite } from '@alivecss/aliveui/vite'
  *
  *   export default defineConfig({
  *     plugins: [aliveUIVite({ content: ['./src/**\/*.{ts,tsx,html}'] })],

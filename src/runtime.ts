@@ -5,7 +5,7 @@
  * dropdown, and tabs components — zero dependencies, ~2 KB.
  *
  * Usage:
- *   import { init } from '@pratikshadake/aliveui/runtime'
+ *   import { init } from '@alivecss/aliveui/runtime'
  *   init() // wire everything in document
  *   init(myRootElement) // wire a subtree
  */
