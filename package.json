@@ -1,6 +1,6 @@
 {
   "name": "@pratikshadake/aliveui",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "Motion-first CSS framework. Every surface has depth. Every interaction is alive.",
   "keywords": [
     "css",
@@ -19,6 +19,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.mjs",
+      "require": "./dist/runtime.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.js"
     }
   },
   "bin": {
@@ -31,7 +41,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
@@ -50,6 +61,7 @@
     "@types/node": "^20.0.0",
     "postcss": "^8.4.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.18"
   }
 }

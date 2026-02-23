@@ -14,4 +14,16 @@ export default defineConfig([
     dts: false,
     banner: { js: '#!/usr/bin/env node' },
   },
+  {
+    entry: { runtime: 'src/runtime.ts' },
+    format: ['cjs', 'esm'],
+    dts: true,
+    sourcemap: true,
+  },
+  {
+    entry: { vite: 'src/vite.ts' },
+    format: ['cjs', 'esm'],
+    dts: true,
+    sourcemap: true,
+  },
 ])

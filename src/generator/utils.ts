@@ -1,6 +1,6 @@
 // Escape special characters in a class name for use as a CSS selector
 export function escapeSelector(cls: string): string {
-  return cls
+  let result = cls
     .replace(/\./g, '\\.')
     .replace(/:/g, '\\:')
     .replace(/\[/g, '\\[')
@@ -8,6 +8,19 @@ export function escapeSelector(cls: string): string {
     .replace(/\//g, '\\/')
     .replace(/#/g, '\\#')
     .replace(/%/g, '\\%')
+  // CSS identifiers cannot start with a plain hyphen followed by a non-letter,
+  // so escape a leading hyphen (used by negative utilities like -m-4, -translate-x-full)
+  if (result.startsWith('-')) {
+    result = '\\' + result
+  }
+  return result
+}
+
+// Extract the arbitrary value from a class token like `w-[100px]` → `100px`
+export function parseArbitrary(cls: string, prefix: string): string | null {
+  const re = new RegExp(`^${prefix}-\\[(.+)\\]$`)
+  const m = cls.match(re)
+  return m ? m[1] : null
 }
 
 // Build a CSS rule block

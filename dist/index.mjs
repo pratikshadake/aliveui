@@ -463,7 +463,7 @@ function mergeTheme(base, overrides) {
 import { readFileSync } from "fs";
 import glob from "fast-glob";
 var CLASS_EXTRACTION_REGEX = /(?:class|className)(?:\s*=\s*|\s*:\s*)(?:"([^"]+)"|'([^']+)'|`([^`]+)`|\{[^}]*['"`]([^'"`]+)['"`][^}]*\})/g;
-var TOKEN_REGEX = /[`'"]([\w\s/-]+)[`'"]/g;
+var TOKEN_REGEX = /[`'"]([\w\s/[\]#%.-]+)[`'"]/g;
 async function scanContent(config) {
   if (config.content.length === 0) return /* @__PURE__ */ new Set();
   const files = await glob(config.content, {
@@ -495,12 +495,12 @@ function extractClasses(content, classes) {
       splitAndAdd(match[1], classes);
     }
   }
-  const rawTokens = content.match(/\b([a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?::[a-z][a-z0-9]*(?:-[a-z0-9./]+)*)*)\b/g);
-  if (rawTokens) {
-    for (const token of rawTokens) {
-      if (isLikelyClass(token)) {
-        classes.add(token);
-      }
+  const rawTokenRegex = /(?:^|[\s"'`{(,])(-?[a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?:-\[[^\]]*\])?(?::[a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?:-\[[^\]]*\])?)*)/g;
+  let rawMatch;
+  while ((rawMatch = rawTokenRegex.exec(content)) !== null) {
+    const token = rawMatch[1];
+    if (token && isLikelyClass(token)) {
+      classes.add(token);
     }
   }
 }
@@ -529,11 +529,14 @@ var JS_PROTOTYPE_PROPS = /* @__PURE__ */ new Set([
   "__lookupSetter__"
 ]);
 function isLikelyClass(token) {
-  if (!token || token.length < 1 || token.length > 60) return false;
-  if (!/^[a-z-]/.test(token)) return false;
+  if (!token || token.length < 1 || token.length > 120) return false;
+  if (!/^-?[a-z]/.test(token)) return false;
   if (/\s/.test(token)) return false;
   if (token.includes("://")) return false;
   if (token.startsWith("http")) return false;
+  const openBrackets = (token.match(/\[/g) ?? []).length;
+  const closeBrackets = (token.match(/\]/g) ?? []).length;
+  if (openBrackets !== closeBrackets) return false;
   if (JS_PROTOTYPE_PROPS.has(token)) return false;
   return true;
 }
@@ -1994,6 +1997,51 @@ function generateBase(_config) {
 }
 .alive-accordion-content-inner { padding: 0 1.25rem 1.25rem; }
 
+/* \u2500\u2500 JS Runtime: is-open / is-active state helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+
+/* Modal and Drawer: hidden by default, shown when .is-open is added by runtime */
+[data-alive-modal],
+[data-alive-drawer] {
+  display: none;
+}
+[data-alive-modal].is-open,
+[data-alive-drawer].is-open {
+  display: flex;
+}
+
+/* Dropdown: hidden by default */
+[data-alive-dropdown-menu] {
+  display: none;
+}
+[data-alive-dropdown-menu].is-open {
+  display: block;
+}
+
+/* Accordion content: collapsed by default, expanded when parent has .is-open */
+[data-alive-content] {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--alive-duration-normal) var(--alive-ease-standard);
+}
+[data-alive-content] > * {
+  overflow: hidden;
+}
+[data-alive-accordion-item].is-open [data-alive-content] {
+  grid-template-rows: 1fr;
+}
+
+/* Tabs: panels hidden by default, shown when .is-active */
+[data-alive-panel] {
+  display: none;
+}
+[data-alive-panel].is-active {
+  display: block;
+}
+[data-alive-tab].is-active {
+  color: rgba(0,0,0,0.9);
+  border-bottom-color: rgba(0,0,0,0.9);
+}
+
 /* \u2500\u2500 Pagination \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .alive-pagination {
@@ -2054,7 +2102,11 @@ function generateBase(_config) {
 
 // src/generator/utils.ts
 function escapeSelector(cls) {
-  return cls.replace(/\./g, "\\.").replace(/:/g, "\\:").replace(/\[/g, "\\[").replace(/\]/g, "\\]").replace(/\//g, "\\/").replace(/#/g, "\\#").replace(/%/g, "\\%");
+  let result = cls.replace(/\./g, "\\.").replace(/:/g, "\\:").replace(/\[/g, "\\[").replace(/\]/g, "\\]").replace(/\//g, "\\/").replace(/#/g, "\\#").replace(/%/g, "\\%");
+  if (result.startsWith("-")) {
+    result = "\\" + result;
+  }
+  return result;
 }
 function resolveColor(colors, name, shade) {
   if (!Object.prototype.hasOwnProperty.call(colors, name)) return null;
@@ -2188,6 +2240,46 @@ function matchColor(cls, colors) {
   --alive-shadow-color: ${value};
 }`;
     }
+  }
+  const arbBgMatch = cls.match(/^bg-\[(.+)\]$/);
+  if (arbBgMatch) {
+    const val = arbBgMatch[1];
+    const escaped = escapeSelector(cls);
+    if (val.startsWith("url(") || val.startsWith("linear-gradient") || val.startsWith("radial-gradient")) {
+      return `.${escaped} {
+  background-image: ${val};${transitioned("background-image")}
+}`;
+    }
+    return `.${escaped} {
+  background-color: ${val};${transitioned("background-color")}
+}`;
+  }
+  const arbTextMatch = cls.match(/^text-\[(.+)\]$/);
+  if (arbTextMatch) {
+    return `.${escapeSelector(cls)} {
+  color: ${arbTextMatch[1]};${transitioned("color")}
+}`;
+  }
+  const arbBorderColorMatch = cls.match(/^border-\[#[0-9a-fA-F]|^border-\[rgb|^border-\[hsl|^border-\[oklch/);
+  if (arbBorderColorMatch) {
+    const m = cls.match(/^border-\[(.+)\]$/);
+    if (m) {
+      return `.${escapeSelector(cls)} {
+  border-color: ${m[1]};${transitioned("border-color")}
+}`;
+    }
+  }
+  const arbFillMatch = cls.match(/^fill-\[(.+)\]$/);
+  if (arbFillMatch) {
+    return `.${escapeSelector(cls)} {
+  fill: ${arbFillMatch[1]};
+}`;
+  }
+  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\]$/);
+  if (arbStrokeMatch) {
+    return `.${escapeSelector(cls)} {
+  stroke: ${arbStrokeMatch[1]};
+}`;
   }
   return null;
 }
@@ -2328,6 +2420,121 @@ function matchSpacing(cls, spacing) {
     if (leftMatch[1] === "auto") return `.${cls} { left: auto; }`;
     if (leftMatch[1] === "0") return `.${cls} { left: 0px; }`;
     if (has(spacing, leftMatch[1])) return `.${cls} { left: ${spacing[leftMatch[1]]}; }`;
+  }
+  const negMMatch = cls.match(/^-m-(.+)$/);
+  if (negMMatch && has(spacing, negMMatch[1])) {
+    return `.\\-m-${negMMatch[1]} { margin: -${spacing[negMMatch[1]]}; }`;
+  }
+  const negMxMatch = cls.match(/^-mx-(.+)$/);
+  if (negMxMatch && has(spacing, negMxMatch[1])) {
+    return `.\\-mx-${negMxMatch[1]} { margin-left: -${spacing[negMxMatch[1]]}; margin-right: -${spacing[negMxMatch[1]]}; }`;
+  }
+  const negMyMatch = cls.match(/^-my-(.+)$/);
+  if (negMyMatch && has(spacing, negMyMatch[1])) {
+    return `.\\-my-${negMyMatch[1]} { margin-top: -${spacing[negMyMatch[1]]}; margin-bottom: -${spacing[negMyMatch[1]]}; }`;
+  }
+  const negMtMatch = cls.match(/^-mt-(.+)$/);
+  if (negMtMatch && has(spacing, negMtMatch[1])) {
+    return `.\\-mt-${negMtMatch[1]} { margin-top: -${spacing[negMtMatch[1]]}; }`;
+  }
+  const negMrMatch = cls.match(/^-mr-(.+)$/);
+  if (negMrMatch && has(spacing, negMrMatch[1])) {
+    return `.\\-mr-${negMrMatch[1]} { margin-right: -${spacing[negMrMatch[1]]}; }`;
+  }
+  const negMbMatch = cls.match(/^-mb-(.+)$/);
+  if (negMbMatch && has(spacing, negMbMatch[1])) {
+    return `.\\-mb-${negMbMatch[1]} { margin-bottom: -${spacing[negMbMatch[1]]}; }`;
+  }
+  const negMlMatch = cls.match(/^-ml-(.+)$/);
+  if (negMlMatch && has(spacing, negMlMatch[1])) {
+    return `.\\-ml-${negMlMatch[1]} { margin-left: -${spacing[negMlMatch[1]]}; }`;
+  }
+  const negInsetMatch = cls.match(/^-inset-(.+)$/);
+  if (negInsetMatch && has(spacing, negInsetMatch[1])) {
+    return `.\\-inset-${negInsetMatch[1]} { inset: -${spacing[negInsetMatch[1]]}; }`;
+  }
+  const negInsetXMatch = cls.match(/^-inset-x-(.+)$/);
+  if (negInsetXMatch && has(spacing, negInsetXMatch[1])) {
+    return `.\\-inset-x-${negInsetXMatch[1]} { left: -${spacing[negInsetXMatch[1]]}; right: -${spacing[negInsetXMatch[1]]}; }`;
+  }
+  const negInsetYMatch = cls.match(/^-inset-y-(.+)$/);
+  if (negInsetYMatch && has(spacing, negInsetYMatch[1])) {
+    return `.\\-inset-y-${negInsetYMatch[1]} { top: -${spacing[negInsetYMatch[1]]}; bottom: -${spacing[negInsetYMatch[1]]}; }`;
+  }
+  const negTopMatch = cls.match(/^-top-(.+)$/);
+  if (negTopMatch && has(spacing, negTopMatch[1])) {
+    return `.\\-top-${negTopMatch[1]} { top: -${spacing[negTopMatch[1]]}; }`;
+  }
+  const negRightMatch = cls.match(/^-right-(.+)$/);
+  if (negRightMatch && has(spacing, negRightMatch[1])) {
+    return `.\\-right-${negRightMatch[1]} { right: -${spacing[negRightMatch[1]]}; }`;
+  }
+  const negBottomMatch = cls.match(/^-bottom-(.+)$/);
+  if (negBottomMatch && has(spacing, negBottomMatch[1])) {
+    return `.\\-bottom-${negBottomMatch[1]} { bottom: -${spacing[negBottomMatch[1]]}; }`;
+  }
+  const negLeftMatch = cls.match(/^-left-(.+)$/);
+  if (negLeftMatch && has(spacing, negLeftMatch[1])) {
+    return `.\\-left-${negLeftMatch[1]} { left: -${spacing[negLeftMatch[1]]}; }`;
+  }
+  const arbSpacingMatch = cls.match(/^(w|h|p|m|pt|pr|pb|pl|px|py|mt|mr|mb|ml|mx|my|gap|gap-x|gap-y|top|right|bottom|left|inset|inset-x|inset-y)-\[(.+)\]$/);
+  if (arbSpacingMatch) {
+    const [, prop, val] = arbSpacingMatch;
+    const escaped = escapeSelector(cls);
+    switch (prop) {
+      case "w":
+        return `.${escaped} { width: ${val}; }`;
+      case "h":
+        return `.${escaped} { height: ${val}; }`;
+      case "p":
+        return `.${escaped} { padding: ${val}; }`;
+      case "m":
+        return `.${escaped} { margin: ${val}; }`;
+      case "pt":
+        return `.${escaped} { padding-top: ${val}; }`;
+      case "pr":
+        return `.${escaped} { padding-right: ${val}; }`;
+      case "pb":
+        return `.${escaped} { padding-bottom: ${val}; }`;
+      case "pl":
+        return `.${escaped} { padding-left: ${val}; }`;
+      case "px":
+        return `.${escaped} { padding-left: ${val}; padding-right: ${val}; }`;
+      case "py":
+        return `.${escaped} { padding-top: ${val}; padding-bottom: ${val}; }`;
+      case "mt":
+        return `.${escaped} { margin-top: ${val}; }`;
+      case "mr":
+        return `.${escaped} { margin-right: ${val}; }`;
+      case "mb":
+        return `.${escaped} { margin-bottom: ${val}; }`;
+      case "ml":
+        return `.${escaped} { margin-left: ${val}; }`;
+      case "mx":
+        return `.${escaped} { margin-left: ${val}; margin-right: ${val}; }`;
+      case "my":
+        return `.${escaped} { margin-top: ${val}; margin-bottom: ${val}; }`;
+      case "gap":
+        return `.${escaped} { gap: ${val}; }`;
+      case "gap-x":
+        return `.${escaped} { column-gap: ${val}; }`;
+      case "gap-y":
+        return `.${escaped} { row-gap: ${val}; }`;
+      case "top":
+        return `.${escaped} { top: ${val}; }`;
+      case "right":
+        return `.${escaped} { right: ${val}; }`;
+      case "bottom":
+        return `.${escaped} { bottom: ${val}; }`;
+      case "left":
+        return `.${escaped} { left: ${val}; }`;
+      case "inset":
+        return `.${escaped} { inset: ${val}; }`;
+      case "inset-x":
+        return `.${escaped} { left: ${val}; right: ${val}; }`;
+      case "inset-y":
+        return `.${escaped} { top: ${val}; bottom: ${val}; }`;
+    }
   }
   return null;
 }
@@ -2604,6 +2811,34 @@ function matchLayout(cls) {
     "mix-blend-exclusion": "exclusion"
   };
   if (mixBlendMap[cls]) return `.${cls} { mix-blend-mode: ${mixBlendMap[cls]}; }`;
+  if (cls === "bg-auto") return `.${cls} { background-size: auto; }`;
+  if (cls === "bg-cover") return `.${cls} { background-size: cover; }`;
+  if (cls === "bg-contain") return `.${cls} { background-size: contain; }`;
+  if (cls === "bg-center") return `.${cls} { background-position: center; }`;
+  if (cls === "bg-top") return `.${cls} { background-position: top; }`;
+  if (cls === "bg-bottom") return `.${cls} { background-position: bottom; }`;
+  if (cls === "bg-left") return `.${cls} { background-position: left; }`;
+  if (cls === "bg-right") return `.${cls} { background-position: right; }`;
+  if (cls === "bg-left-top") return `.${cls} { background-position: left top; }`;
+  if (cls === "bg-left-bottom") return `.${cls} { background-position: left bottom; }`;
+  if (cls === "bg-right-top") return `.${cls} { background-position: right top; }`;
+  if (cls === "bg-right-bottom") return `.${cls} { background-position: right bottom; }`;
+  if (cls === "bg-repeat") return `.${cls} { background-repeat: repeat; }`;
+  if (cls === "bg-no-repeat") return `.${cls} { background-repeat: no-repeat; }`;
+  if (cls === "bg-repeat-x") return `.${cls} { background-repeat: repeat-x; }`;
+  if (cls === "bg-repeat-y") return `.${cls} { background-repeat: repeat-y; }`;
+  if (cls === "bg-repeat-round") return `.${cls} { background-repeat: round; }`;
+  if (cls === "bg-repeat-space") return `.${cls} { background-repeat: space; }`;
+  if (cls === "bg-fixed") return `.${cls} { background-attachment: fixed; }`;
+  if (cls === "bg-local") return `.${cls} { background-attachment: local; }`;
+  if (cls === "bg-scroll") return `.${cls} { background-attachment: scroll; }`;
+  if (cls === "bg-origin-border") return `.${cls} { background-origin: border-box; }`;
+  if (cls === "bg-origin-padding") return `.${cls} { background-origin: padding-box; }`;
+  if (cls === "bg-origin-content") return `.${cls} { background-origin: content-box; }`;
+  if (cls === "bg-clip-border") return `.${cls} { background-clip: border-box; }`;
+  if (cls === "bg-clip-padding") return `.${cls} { background-clip: padding-box; }`;
+  if (cls === "bg-clip-content") return `.${cls} { background-clip: content-box; }`;
+  if (cls === "bg-clip-text") return `.${cls} { background-clip: text; -webkit-background-clip: text; }`;
   return null;
 }
 
@@ -2925,6 +3160,52 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
     const key = backdropBlurMatch[1] ?? "DEFAULT";
     if (has3(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`;
   }
+  const arbOpacityMatch = cls.match(/^opacity-\[(.+)\]$/);
+  if (arbOpacityMatch) {
+    const escaped = escapeSelector(cls);
+    return `.${escaped} {
+  opacity: ${arbOpacityMatch[1]};
+  transition-property: opacity;
+  transition-duration: var(--alive-duration, 0ms);
+  transition-timing-function: var(--alive-ease, linear);
+}`;
+  }
+  const arbZMatch = cls.match(/^z-\[(.+)\]$/);
+  if (arbZMatch) {
+    return `.${escapeSelector(cls)} { z-index: ${arbZMatch[1]}; }`;
+  }
+  const arbRoundedMatch = cls.match(/^rounded-\[(.+)\]$/);
+  if (arbRoundedMatch) {
+    return `.${escapeSelector(cls)} { border-radius: ${arbRoundedMatch[1]}; }`;
+  }
+  const arbBorderMatch = cls.match(/^border-\[(.+)\]$/);
+  if (arbBorderMatch) {
+    return `.${escapeSelector(cls)} { border-width: ${arbBorderMatch[1]}; border-style: solid; }`;
+  }
+  const arbShadowMatch = cls.match(/^shadow-\[(.+)\]$/);
+  if (arbShadowMatch) {
+    return `.${escapeSelector(cls)} { box-shadow: ${arbShadowMatch[1]}; }`;
+  }
+  const arbBlurMatch = cls.match(/^blur-\[(.+)\]$/);
+  if (arbBlurMatch) {
+    return `.${escapeSelector(cls)} { filter: blur(${arbBlurMatch[1]}); }`;
+  }
+  const arbScaleMatch = cls.match(/^scale-\[(.+)\]$/);
+  if (arbScaleMatch) {
+    return `.${escapeSelector(cls)} { transform: scale(${arbScaleMatch[1]}); }`;
+  }
+  const arbRotateMatch = cls.match(/^rotate-\[(.+)\]$/);
+  if (arbRotateMatch) {
+    return `.${escapeSelector(cls)} { transform: rotate(${arbRotateMatch[1]}); }`;
+  }
+  const arbTranslateXMatch = cls.match(/^translate-x-\[(.+)\]$/);
+  if (arbTranslateXMatch) {
+    return `.${escapeSelector(cls)} { transform: translateX(${arbTranslateXMatch[1]}); }`;
+  }
+  const arbTranslateYMatch = cls.match(/^translate-y-\[(.+)\]$/);
+  if (arbTranslateYMatch) {
+    return `.${escapeSelector(cls)} { transform: translateY(${arbTranslateYMatch[1]}); }`;
+  }
   return null;
 }
 
@@ -2950,9 +3231,10 @@ function generateUtilities(classes, config) {
   for (const gen of generators) {
     const rules = gen(baseClasses, config);
     for (const r of rules) {
-      const selectorMatch = r.match(/^\.([\w-]+)/);
-      if (selectorMatch) {
-        baseRuleMap.set(selectorMatch[1], r);
+      const selectorMatch = r.match(/^\.((?:\\.|[^ {>+~:])*)/);
+      if (selectorMatch && selectorMatch[1]) {
+        const key = selectorMatch[1].replace(/\\(.)/g, "$1");
+        baseRuleMap.set(key, r);
       }
     }
   }
@@ -3098,6 +3380,46 @@ function generateAliveSpecific(classes, _config) {
       "alive-sr-only"
     ];
     if (aliveBasePrefixes.some((p) => cls === p || cls.startsWith(p + "-"))) continue;
+    if (cls === "animate-none") {
+      rules.push(`.${cls} { animation: none; }`);
+      continue;
+    }
+    if (cls === "animate-spin") {
+      rules.push(`.${cls} { animation: alive-spin 1s linear infinite; }`);
+      continue;
+    }
+    if (cls === "animate-ping") {
+      rules.push(`.${cls} { animation: alive-ping 1s cubic-bezier(0,0,0.2,1) infinite; }`);
+      continue;
+    }
+    if (cls === "animate-pulse") {
+      rules.push(`.${cls} { animation: alive-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }`);
+      continue;
+    }
+    if (cls === "animate-bounce") {
+      rules.push(`.${cls} { animation: alive-bounce 1s infinite; }`);
+      continue;
+    }
+    if (cls === "animate-shimmer") {
+      rules.push(`.${cls} { animation: alive-shimmer 1.5s linear infinite; }`);
+      continue;
+    }
+    if (cls === "ease-linear") {
+      rules.push(`.${cls} { transition-timing-function: linear; }`);
+      continue;
+    }
+    if (cls === "ease-in") {
+      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,1,1); }`);
+      continue;
+    }
+    if (cls === "ease-out") {
+      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0,0,0.2,1); }`);
+      continue;
+    }
+    if (cls === "ease-in-out") {
+      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,0.2,1); }`);
+      continue;
+    }
     if (cls === "group") {
       rules.push(`.${cls} {}`);
       continue;

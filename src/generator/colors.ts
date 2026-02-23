@@ -1,5 +1,5 @@
 import type { ResolvedConfig } from '../types'
-import { rule, resolveColor } from './utils'
+import { rule, resolveColor, escapeSelector } from './utils'
 
 // Properties that benefit from alive motion transitions
 const TRANSITIONED = `
@@ -124,6 +124,42 @@ function matchColor(
     if (value) {
       return `.${cls} {\n  --alive-shadow-color: ${value};\n}`
     }
+  }
+
+  // ── Arbitrary color values ────────────────────────────────────────
+
+  const arbBgMatch = cls.match(/^bg-\[(.+)\]$/)
+  if (arbBgMatch) {
+    const val = arbBgMatch[1]
+    const escaped = escapeSelector(cls)
+    // Support both colors and url() / gradient values
+    if (val.startsWith('url(') || val.startsWith('linear-gradient') || val.startsWith('radial-gradient')) {
+      return `.${escaped} {\n  background-image: ${val};${transitioned('background-image')}\n}`
+    }
+    return `.${escaped} {\n  background-color: ${val};${transitioned('background-color')}\n}`
+  }
+
+  const arbTextMatch = cls.match(/^text-\[(.+)\]$/)
+  if (arbTextMatch) {
+    return `.${escapeSelector(cls)} {\n  color: ${arbTextMatch[1]};${transitioned('color')}\n}`
+  }
+
+  const arbBorderColorMatch = cls.match(/^border-\[#[0-9a-fA-F]|^border-\[rgb|^border-\[hsl|^border-\[oklch/)
+  if (arbBorderColorMatch) {
+    const m = cls.match(/^border-\[(.+)\]$/)
+    if (m) {
+      return `.${escapeSelector(cls)} {\n  border-color: ${m[1]};${transitioned('border-color')}\n}`
+    }
+  }
+
+  const arbFillMatch = cls.match(/^fill-\[(.+)\]$/)
+  if (arbFillMatch) {
+    return `.${escapeSelector(cls)} {\n  fill: ${arbFillMatch[1]};\n}`
+  }
+
+  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\]$/)
+  if (arbStrokeMatch) {
+    return `.${escapeSelector(cls)} {\n  stroke: ${arbStrokeMatch[1]};\n}`
   }
 
   return null

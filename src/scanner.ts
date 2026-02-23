@@ -7,7 +7,7 @@ import type { ResolvedConfig } from './types'
 const CLASS_EXTRACTION_REGEX =
   /(?:class|className)(?:\s*=\s*|\s*:\s*)(?:"([^"]+)"|'([^']+)'|`([^`]+)`|\{[^}]*['"`]([^'"`]+)['"`][^}]*\})/g
 
-const TOKEN_REGEX = /[`'"]([\w\s/-]+)[`'"]/g
+const TOKEN_REGEX = /[`'"]([\w\s/[\]#%.-]+)[`'"]/g
 
 export async function scanContent(config: ResolvedConfig): Promise<Set<string>> {
   if (config.content.length === 0) return new Set()
@@ -54,13 +54,14 @@ function extractClasses(content: string, classes: Set<string>): void {
   }
 
   // 3. Raw token scan — find anything that looks like a utility class
-  // Pattern: word chars and hyphens, possibly with colon prefix (variants)
-  const rawTokens = content.match(/\b([a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?::[a-z][a-z0-9]*(?:-[a-z0-9./]+)*)*)\b/g)
-  if (rawTokens) {
-    for (const token of rawTokens) {
-      if (isLikelyClass(token)) {
-        classes.add(token)
-      }
+  // Handles: standard classes, negative utilities (-m-4), arbitrary values (w-[100px]),
+  // and variant-prefixed classes (hover:bg-blue-500)
+  const rawTokenRegex = /(?:^|[\s"'`{(,])(-?[a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?:-\[[^\]]*\])?(?::[a-z][a-z0-9]*(?:-[a-z0-9./]+)*(?:-\[[^\]]*\])?)*)/g
+  let rawMatch: RegExpExecArray | null
+  while ((rawMatch = rawTokenRegex.exec(content)) !== null) {
+    const token = rawMatch[1]
+    if (token && isLikelyClass(token)) {
+      classes.add(token)
     }
   }
 }
@@ -87,14 +88,19 @@ const JS_PROTOTYPE_PROPS = new Set([
 
 // Quick heuristic to filter out non-class tokens
 function isLikelyClass(token: string): boolean {
-  if (!token || token.length < 1 || token.length > 60) return false
-  // Must start with a letter
-  if (!/^[a-z-]/.test(token)) return false
+  if (!token || token.length < 1 || token.length > 120) return false
+  // Must start with an optional leading dash then a letter (e.g. -m-4 or bg-blue-500)
+  if (!/^-?[a-z]/.test(token)) return false
   // No spaces (should be a single token)
   if (/\s/.test(token)) return false
   // Skip common non-class patterns
   if (token.includes('://')) return false
   if (token.startsWith('http')) return false
+  // Allow arbitrary value brackets — [100px], [#ff0000], [url(...)]
+  // but reject tokens that have unmatched brackets
+  const openBrackets = (token.match(/\[/g) ?? []).length
+  const closeBrackets = (token.match(/\]/g) ?? []).length
+  if (openBrackets !== closeBrackets) return false
   // Skip JS prototype-inherited property names — accessing these on a plain object
   // returns a function, not undefined, which would produce invalid CSS rules
   if (JS_PROTOTYPE_PROPS.has(token)) return false

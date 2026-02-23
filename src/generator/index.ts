@@ -36,10 +36,15 @@ export function generateUtilities(classes: Set<string>, config: ResolvedConfig):
   for (const gen of generators) {
     const rules = gen(baseClasses, config)
     for (const r of rules) {
-      // Extract the base class name from the rule selector
-      const selectorMatch = r.match(/^\.([\w-]+)/)
-      if (selectorMatch) {
-        baseRuleMap.set(selectorMatch[1], r)
+      // Extract the base class name from the rule selector.
+      // Handles: simple (.w-4), escaped arbitrary (.w-\[100px\]), negative (.\-m-4),
+      // and multi-selector (.divide-x > * + *) rules.
+      // Regex: match everything after the leading dot up to an unescaped space/brace/combinator/colon
+      const selectorMatch = r.match(/^\.((?:\\.|[^ {>+~:])*)/)
+      if (selectorMatch && selectorMatch[1]) {
+        // Unescape CSS escapes (e.g. \[ → [, \- → -) to recover the original class name
+        const key = selectorMatch[1].replace(/\\(.)/g, '$1')
+        baseRuleMap.set(key, r)
       }
     }
   }
@@ -158,6 +163,20 @@ function generateAliveSpecific(classes: Set<string>, _config: ResolvedConfig): s
       'alive-backdrop', 'alive-sr-only',
     ]
     if (aliveBasePrefixes.some(p => cls === p || cls.startsWith(p + '-'))) continue
+
+    // Animate utilities (keyframes are defined in base.ts)
+    if (cls === 'animate-none')    { rules.push(`.${cls} { animation: none; }`); continue }
+    if (cls === 'animate-spin')    { rules.push(`.${cls} { animation: alive-spin 1s linear infinite; }`); continue }
+    if (cls === 'animate-ping')    { rules.push(`.${cls} { animation: alive-ping 1s cubic-bezier(0,0,0.2,1) infinite; }`); continue }
+    if (cls === 'animate-pulse')   { rules.push(`.${cls} { animation: alive-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }`); continue }
+    if (cls === 'animate-bounce')  { rules.push(`.${cls} { animation: alive-bounce 1s infinite; }`); continue }
+    if (cls === 'animate-shimmer') { rules.push(`.${cls} { animation: alive-shimmer 1.5s linear infinite; }`); continue }
+
+    // Easing timing function overrides
+    if (cls === 'ease-linear')  { rules.push(`.${cls} { transition-timing-function: linear; }`); continue }
+    if (cls === 'ease-in')      { rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,1,1); }`); continue }
+    if (cls === 'ease-out')     { rules.push(`.${cls} { transition-timing-function: cubic-bezier(0,0,0.2,1); }`); continue }
+    if (cls === 'ease-in-out')  { rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,0.2,1); }`); continue }
 
     // Group utility
     if (cls === 'group') {

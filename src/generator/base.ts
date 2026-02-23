@@ -1457,6 +1457,51 @@ export function generateBase(_config: ResolvedConfig): string {
 }
 .alive-accordion-content-inner { padding: 0 1.25rem 1.25rem; }
 
+/* ── JS Runtime: is-open / is-active state helpers ──────────────── */
+
+/* Modal and Drawer: hidden by default, shown when .is-open is added by runtime */
+[data-alive-modal],
+[data-alive-drawer] {
+  display: none;
+}
+[data-alive-modal].is-open,
+[data-alive-drawer].is-open {
+  display: flex;
+}
+
+/* Dropdown: hidden by default */
+[data-alive-dropdown-menu] {
+  display: none;
+}
+[data-alive-dropdown-menu].is-open {
+  display: block;
+}
+
+/* Accordion content: collapsed by default, expanded when parent has .is-open */
+[data-alive-content] {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--alive-duration-normal) var(--alive-ease-standard);
+}
+[data-alive-content] > * {
+  overflow: hidden;
+}
+[data-alive-accordion-item].is-open [data-alive-content] {
+  grid-template-rows: 1fr;
+}
+
+/* Tabs: panels hidden by default, shown when .is-active */
+[data-alive-panel] {
+  display: none;
+}
+[data-alive-panel].is-active {
+  display: block;
+}
+[data-alive-tab].is-active {
+  color: rgba(0,0,0,0.9);
+  border-bottom-color: rgba(0,0,0,0.9);
+}
+
 /* ── Pagination ──────────────────────────────────────────────────── */
 
 .alive-pagination {

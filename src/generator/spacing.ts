@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../types'
+import { escapeSelector } from './utils'
 
 export function generateSpacing(classes: Set<string>, config: ResolvedConfig): string[] {
   const { spacing } = config.theme
@@ -169,6 +170,118 @@ function matchSpacing(cls: string, spacing: Record<string, string>): string | nu
     if (leftMatch[1] === 'auto') return `.${cls} { left: auto; }`
     if (leftMatch[1] === '0') return `.${cls} { left: 0px; }`
     if (has(spacing, leftMatch[1])) return `.${cls} { left: ${spacing[leftMatch[1]]}; }`
+  }
+
+  // ── Negative margin utilities ─────────────────────────────────────
+
+  const negMMatch = cls.match(/^-m-(.+)$/)
+  if (negMMatch && has(spacing, negMMatch[1])) {
+    return `.\\-m-${negMMatch[1]} { margin: -${spacing[negMMatch[1]]}; }`
+  }
+
+  const negMxMatch = cls.match(/^-mx-(.+)$/)
+  if (negMxMatch && has(spacing, negMxMatch[1])) {
+    return `.\\-mx-${negMxMatch[1]} { margin-left: -${spacing[negMxMatch[1]]}; margin-right: -${spacing[negMxMatch[1]]}; }`
+  }
+
+  const negMyMatch = cls.match(/^-my-(.+)$/)
+  if (negMyMatch && has(spacing, negMyMatch[1])) {
+    return `.\\-my-${negMyMatch[1]} { margin-top: -${spacing[negMyMatch[1]]}; margin-bottom: -${spacing[negMyMatch[1]]}; }`
+  }
+
+  const negMtMatch = cls.match(/^-mt-(.+)$/)
+  if (negMtMatch && has(spacing, negMtMatch[1])) {
+    return `.\\-mt-${negMtMatch[1]} { margin-top: -${spacing[negMtMatch[1]]}; }`
+  }
+
+  const negMrMatch = cls.match(/^-mr-(.+)$/)
+  if (negMrMatch && has(spacing, negMrMatch[1])) {
+    return `.\\-mr-${negMrMatch[1]} { margin-right: -${spacing[negMrMatch[1]]}; }`
+  }
+
+  const negMbMatch = cls.match(/^-mb-(.+)$/)
+  if (negMbMatch && has(spacing, negMbMatch[1])) {
+    return `.\\-mb-${negMbMatch[1]} { margin-bottom: -${spacing[negMbMatch[1]]}; }`
+  }
+
+  const negMlMatch = cls.match(/^-ml-(.+)$/)
+  if (negMlMatch && has(spacing, negMlMatch[1])) {
+    return `.\\-ml-${negMlMatch[1]} { margin-left: -${spacing[negMlMatch[1]]}; }`
+  }
+
+  // ── Negative inset utilities ──────────────────────────────────────
+
+  const negInsetMatch = cls.match(/^-inset-(.+)$/)
+  if (negInsetMatch && has(spacing, negInsetMatch[1])) {
+    return `.\\-inset-${negInsetMatch[1]} { inset: -${spacing[negInsetMatch[1]]}; }`
+  }
+
+  const negInsetXMatch = cls.match(/^-inset-x-(.+)$/)
+  if (negInsetXMatch && has(spacing, negInsetXMatch[1])) {
+    return `.\\-inset-x-${negInsetXMatch[1]} { left: -${spacing[negInsetXMatch[1]]}; right: -${spacing[negInsetXMatch[1]]}; }`
+  }
+
+  const negInsetYMatch = cls.match(/^-inset-y-(.+)$/)
+  if (negInsetYMatch && has(spacing, negInsetYMatch[1])) {
+    return `.\\-inset-y-${negInsetYMatch[1]} { top: -${spacing[negInsetYMatch[1]]}; bottom: -${spacing[negInsetYMatch[1]]}; }`
+  }
+
+  // ── Negative position utilities ───────────────────────────────────
+
+  const negTopMatch = cls.match(/^-top-(.+)$/)
+  if (negTopMatch && has(spacing, negTopMatch[1])) {
+    return `.\\-top-${negTopMatch[1]} { top: -${spacing[negTopMatch[1]]}; }`
+  }
+
+  const negRightMatch = cls.match(/^-right-(.+)$/)
+  if (negRightMatch && has(spacing, negRightMatch[1])) {
+    return `.\\-right-${negRightMatch[1]} { right: -${spacing[negRightMatch[1]]}; }`
+  }
+
+  const negBottomMatch = cls.match(/^-bottom-(.+)$/)
+  if (negBottomMatch && has(spacing, negBottomMatch[1])) {
+    return `.\\-bottom-${negBottomMatch[1]} { bottom: -${spacing[negBottomMatch[1]]}; }`
+  }
+
+  const negLeftMatch = cls.match(/^-left-(.+)$/)
+  if (negLeftMatch && has(spacing, negLeftMatch[1])) {
+    return `.\\-left-${negLeftMatch[1]} { left: -${spacing[negLeftMatch[1]]}; }`
+  }
+
+  // ── Arbitrary value utilities ─────────────────────────────────────
+
+  const arbSpacingMatch = cls.match(/^(w|h|p|m|pt|pr|pb|pl|px|py|mt|mr|mb|ml|mx|my|gap|gap-x|gap-y|top|right|bottom|left|inset|inset-x|inset-y)-\[(.+)\]$/)
+  if (arbSpacingMatch) {
+    const [, prop, val] = arbSpacingMatch
+    const escaped = escapeSelector(cls)
+    switch (prop) {
+      case 'w':      return `.${escaped} { width: ${val}; }`
+      case 'h':      return `.${escaped} { height: ${val}; }`
+      case 'p':      return `.${escaped} { padding: ${val}; }`
+      case 'm':      return `.${escaped} { margin: ${val}; }`
+      case 'pt':     return `.${escaped} { padding-top: ${val}; }`
+      case 'pr':     return `.${escaped} { padding-right: ${val}; }`
+      case 'pb':     return `.${escaped} { padding-bottom: ${val}; }`
+      case 'pl':     return `.${escaped} { padding-left: ${val}; }`
+      case 'px':     return `.${escaped} { padding-left: ${val}; padding-right: ${val}; }`
+      case 'py':     return `.${escaped} { padding-top: ${val}; padding-bottom: ${val}; }`
+      case 'mt':     return `.${escaped} { margin-top: ${val}; }`
+      case 'mr':     return `.${escaped} { margin-right: ${val}; }`
+      case 'mb':     return `.${escaped} { margin-bottom: ${val}; }`
+      case 'ml':     return `.${escaped} { margin-left: ${val}; }`
+      case 'mx':     return `.${escaped} { margin-left: ${val}; margin-right: ${val}; }`
+      case 'my':     return `.${escaped} { margin-top: ${val}; margin-bottom: ${val}; }`
+      case 'gap':    return `.${escaped} { gap: ${val}; }`
+      case 'gap-x':  return `.${escaped} { column-gap: ${val}; }`
+      case 'gap-y':  return `.${escaped} { row-gap: ${val}; }`
+      case 'top':    return `.${escaped} { top: ${val}; }`
+      case 'right':  return `.${escaped} { right: ${val}; }`
+      case 'bottom': return `.${escaped} { bottom: ${val}; }`
+      case 'left':   return `.${escaped} { left: ${val}; }`
+      case 'inset':  return `.${escaped} { inset: ${val}; }`
+      case 'inset-x': return `.${escaped} { left: ${val}; right: ${val}; }`
+      case 'inset-y': return `.${escaped} { top: ${val}; bottom: ${val}; }`
+    }
   }
 
   return null

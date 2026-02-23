@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../types'
+import { escapeSelector } from './utils'
 
 function has(obj: Record<string, string>, key: string): boolean {
   return typeof obj[key] === 'string'
@@ -206,6 +207,59 @@ function matchEffects(
     }
     const key = backdropBlurMatch[1] ?? 'DEFAULT'
     if (has(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`
+  }
+
+  // ── Arbitrary value utilities ─────────────────────────────────────
+
+  const arbOpacityMatch = cls.match(/^opacity-\[(.+)\]$/)
+  if (arbOpacityMatch) {
+    const escaped = escapeSelector(cls)
+    return `.${escaped} {\n  opacity: ${arbOpacityMatch[1]};\n  transition-property: opacity;\n  transition-duration: var(--alive-duration, 0ms);\n  transition-timing-function: var(--alive-ease, linear);\n}`
+  }
+
+  const arbZMatch = cls.match(/^z-\[(.+)\]$/)
+  if (arbZMatch) {
+    return `.${escapeSelector(cls)} { z-index: ${arbZMatch[1]}; }`
+  }
+
+  const arbRoundedMatch = cls.match(/^rounded-\[(.+)\]$/)
+  if (arbRoundedMatch) {
+    return `.${escapeSelector(cls)} { border-radius: ${arbRoundedMatch[1]}; }`
+  }
+
+  const arbBorderMatch = cls.match(/^border-\[(.+)\]$/)
+  if (arbBorderMatch) {
+    return `.${escapeSelector(cls)} { border-width: ${arbBorderMatch[1]}; border-style: solid; }`
+  }
+
+  const arbShadowMatch = cls.match(/^shadow-\[(.+)\]$/)
+  if (arbShadowMatch) {
+    return `.${escapeSelector(cls)} { box-shadow: ${arbShadowMatch[1]}; }`
+  }
+
+  const arbBlurMatch = cls.match(/^blur-\[(.+)\]$/)
+  if (arbBlurMatch) {
+    return `.${escapeSelector(cls)} { filter: blur(${arbBlurMatch[1]}); }`
+  }
+
+  const arbScaleMatch = cls.match(/^scale-\[(.+)\]$/)
+  if (arbScaleMatch) {
+    return `.${escapeSelector(cls)} { transform: scale(${arbScaleMatch[1]}); }`
+  }
+
+  const arbRotateMatch = cls.match(/^rotate-\[(.+)\]$/)
+  if (arbRotateMatch) {
+    return `.${escapeSelector(cls)} { transform: rotate(${arbRotateMatch[1]}); }`
+  }
+
+  const arbTranslateXMatch = cls.match(/^translate-x-\[(.+)\]$/)
+  if (arbTranslateXMatch) {
+    return `.${escapeSelector(cls)} { transform: translateX(${arbTranslateXMatch[1]}); }`
+  }
+
+  const arbTranslateYMatch = cls.match(/^translate-y-\[(.+)\]$/)
+  if (arbTranslateYMatch) {
+    return `.${escapeSelector(cls)} { transform: translateY(${arbTranslateYMatch[1]}); }`
   }
 
   return null

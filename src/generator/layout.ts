@@ -244,5 +244,45 @@ function matchLayout(cls: string): string | null {
   }
   if (mixBlendMap[cls]) return `.${cls} { mix-blend-mode: ${mixBlendMap[cls]}; }`
 
+  // ── Background size ───────────────────────────────────────────────
+  if (cls === 'bg-auto')    return `.${cls} { background-size: auto; }`
+  if (cls === 'bg-cover')   return `.${cls} { background-size: cover; }`
+  if (cls === 'bg-contain') return `.${cls} { background-size: contain; }`
+
+  // ── Background position ───────────────────────────────────────────
+  if (cls === 'bg-center')       return `.${cls} { background-position: center; }`
+  if (cls === 'bg-top')          return `.${cls} { background-position: top; }`
+  if (cls === 'bg-bottom')       return `.${cls} { background-position: bottom; }`
+  if (cls === 'bg-left')         return `.${cls} { background-position: left; }`
+  if (cls === 'bg-right')        return `.${cls} { background-position: right; }`
+  if (cls === 'bg-left-top')     return `.${cls} { background-position: left top; }`
+  if (cls === 'bg-left-bottom')  return `.${cls} { background-position: left bottom; }`
+  if (cls === 'bg-right-top')    return `.${cls} { background-position: right top; }`
+  if (cls === 'bg-right-bottom') return `.${cls} { background-position: right bottom; }`
+
+  // ── Background repeat ─────────────────────────────────────────────
+  if (cls === 'bg-repeat')    return `.${cls} { background-repeat: repeat; }`
+  if (cls === 'bg-no-repeat') return `.${cls} { background-repeat: no-repeat; }`
+  if (cls === 'bg-repeat-x')  return `.${cls} { background-repeat: repeat-x; }`
+  if (cls === 'bg-repeat-y')  return `.${cls} { background-repeat: repeat-y; }`
+  if (cls === 'bg-repeat-round') return `.${cls} { background-repeat: round; }`
+  if (cls === 'bg-repeat-space') return `.${cls} { background-repeat: space; }`
+
+  // ── Background attachment ─────────────────────────────────────────
+  if (cls === 'bg-fixed')  return `.${cls} { background-attachment: fixed; }`
+  if (cls === 'bg-local')  return `.${cls} { background-attachment: local; }`
+  if (cls === 'bg-scroll') return `.${cls} { background-attachment: scroll; }`
+
+  // ── Background origin ─────────────────────────────────────────────
+  if (cls === 'bg-origin-border')  return `.${cls} { background-origin: border-box; }`
+  if (cls === 'bg-origin-padding') return `.${cls} { background-origin: padding-box; }`
+  if (cls === 'bg-origin-content') return `.${cls} { background-origin: content-box; }`
+
+  // ── Background clip ───────────────────────────────────────────────
+  if (cls === 'bg-clip-border')  return `.${cls} { background-clip: border-box; }`
+  if (cls === 'bg-clip-padding') return `.${cls} { background-clip: padding-box; }`
+  if (cls === 'bg-clip-content') return `.${cls} { background-clip: content-box; }`
+  if (cls === 'bg-clip-text')    return `.${cls} { background-clip: text; -webkit-background-clip: text; }`
+
   return null
 }
