@@ -233,6 +233,15 @@ export function generateBase(_config: ResolvedConfig): string {
     opacity: 1;
     transform: none;
   }
+
+  /* depth system — disable hover lift and active press */
+  .d2,
+  .d2:hover,
+  .d2:active {
+    transform: none;
+    transition: none;
+    box-shadow: var(--alive-shadow-d2);
+  }
 }
 
 /* ── Motion override utilities ───────────────────────────────────── */

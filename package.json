@@ -1,6 +1,6 @@
 {
   "name": "@pratikshadake/aliveui",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0",
   "description": "Motion-first CSS framework. Every surface has depth. Every interaction is alive.",
   "keywords": [
     "css",

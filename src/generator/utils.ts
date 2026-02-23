@@ -48,12 +48,22 @@ export function resolveColor(
 
 // Parse a class name into variant prefixes and the base utility
 // e.g. 'hover:md:bg-blue-500' → { variants: ['hover', 'md'], base: 'bg-blue-500' }
+// Bracket-aware: colons inside [...] (e.g. bg-[url(https://...)]) are not treated as separators
 export function parseVariants(cls: string): { variants: string[]; base: string } {
-  const parts = cls.split(':')
-  return {
-    variants: parts.slice(0, -1),
-    base: parts[parts.length - 1],
+  const variants: string[] = []
+  let depth = 0
+  let current = ''
+  for (const ch of cls) {
+    if (ch === '[') depth++
+    else if (ch === ']') depth--
+    else if (ch === ':' && depth === 0) {
+      variants.push(current)
+      current = ''
+      continue
+    }
+    current += ch
   }
+  return { variants, base: current }
 }
 
 // Wrap a CSS rule with state/responsive/dark variants
