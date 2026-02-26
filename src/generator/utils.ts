@@ -46,6 +46,22 @@ export function resolveColor(
   return entry[shade] ?? null
 }
 
+// Apply an opacity modifier (0-100) to a color value.
+// Hex colors are converted to rgba(); other formats use color-mix().
+export function applyOpacity(value: string, opacity: number): string {
+  const alpha = +(opacity / 100).toFixed(3)
+  const hexMatch = value.match(/^#([0-9a-fA-F]{3,6})$/)
+  if (hexMatch) {
+    let hex = hexMatch[1]
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
+    const r = parseInt(hex.slice(0, 2), 16)
+    const g = parseInt(hex.slice(2, 4), 16)
+    const b = parseInt(hex.slice(4, 6), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return `color-mix(in srgb, ${value} ${opacity}%, transparent)`
+}
+
 // Parse a class name into variant prefixes and the base utility
 // e.g. 'hover:md:bg-blue-500' → { variants: ['hover', 'md'], base: 'bg-blue-500' }
 // Bracket-aware: colons inside [...] (e.g. bg-[url(https://...)]) are not treated as separators
@@ -108,6 +124,9 @@ export function wrapVariants(
         break
       case 'even':
         selector += ':nth-child(even)'
+        break
+      case 'file':
+        selector += '::file-selector-button'
         break
       case 'group-hover':
         selector = `.group:hover ${selector}`

@@ -2193,6 +2193,19 @@ function resolveColor(colors, name, shade) {
   if (!Object.prototype.hasOwnProperty.call(entry, shade)) return null;
   return entry[shade] ?? null;
 }
+function applyOpacity(value, opacity) {
+  const alpha = +(opacity / 100).toFixed(3);
+  const hexMatch = value.match(/^#([0-9a-fA-F]{3,6})$/);
+  if (hexMatch) {
+    let hex = hexMatch[1];
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return `color-mix(in srgb, ${value} ${opacity}%, transparent)`;
+}
 function parseVariants(cls) {
   const variants = [];
   let depth = 0;
@@ -2232,7 +2245,7 @@ function matchColor(cls, colors) {
   if (bgMatch) {
     const value = resolveColor(colors, bgMatch[1], bgMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   background-color: ${value};${transitioned("background-color")}
 }`;
     }
@@ -2241,7 +2254,7 @@ function matchColor(cls, colors) {
   if (textColorMatch) {
     const value = resolveColor(colors, textColorMatch[1], textColorMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   color: ${value};${transitioned("color")}
 }`;
     }
@@ -2250,7 +2263,7 @@ function matchColor(cls, colors) {
   if (borderColorMatch) {
     const value = resolveColor(colors, borderColorMatch[1], borderColorMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   border-color: ${value};${transitioned("border-color")}
 }`;
     }
@@ -2259,7 +2272,7 @@ function matchColor(cls, colors) {
   if (ringColorMatch) {
     const value = resolveColor(colors, ringColorMatch[1], ringColorMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   --alive-ring-color: ${value};
 }`;
     }
@@ -2268,7 +2281,7 @@ function matchColor(cls, colors) {
   if (outlineColorMatch) {
     const value = resolveColor(colors, outlineColorMatch[1], outlineColorMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   outline-color: ${value};
 }`;
     }
@@ -2277,7 +2290,7 @@ function matchColor(cls, colors) {
   if (fillMatch) {
     const value = resolveColor(colors, fillMatch[1], fillMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   fill: ${value};
 }`;
     }
@@ -2286,7 +2299,7 @@ function matchColor(cls, colors) {
   if (strokeMatch) {
     const value = resolveColor(colors, strokeMatch[1], strokeMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   stroke: ${value};
 }`;
     }
@@ -2295,7 +2308,7 @@ function matchColor(cls, colors) {
   if (decorationMatch) {
     const value = resolveColor(colors, decorationMatch[1], decorationMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   text-decoration-color: ${value};
 }`;
     }
@@ -2304,7 +2317,7 @@ function matchColor(cls, colors) {
   if (caretMatch) {
     const value = resolveColor(colors, caretMatch[1], caretMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   caret-color: ${value};
 }`;
     }
@@ -2313,7 +2326,7 @@ function matchColor(cls, colors) {
   if (accentMatch) {
     const value = resolveColor(colors, accentMatch[1], accentMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   accent-color: ${value};
 }`;
     }
@@ -2322,49 +2335,72 @@ function matchColor(cls, colors) {
   if (shadowColorMatch) {
     const value = resolveColor(colors, shadowColorMatch[1], shadowColorMatch[2]);
     if (value) {
-      return `.${cls} {
+      return `.${escapeSelector(cls)} {
   --alive-shadow-color: ${value};
 }`;
     }
   }
-  const arbBgMatch = cls.match(/^bg-\[(.+)\]$/);
+  const arbBgMatch = cls.match(/^bg-\[(.+)\](?:\/(\d+))?$/);
   if (arbBgMatch) {
-    const val = arbBgMatch[1];
+    const [, val, opStr] = arbBgMatch;
     const escaped = escapeSelector(cls);
     if (val.startsWith("url(") || val.startsWith("linear-gradient") || val.startsWith("radial-gradient")) {
       return `.${escaped} {
   background-image: ${val};${transitioned("background-image")}
 }`;
     }
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
     return `.${escaped} {
-  background-color: ${val};${transitioned("background-color")}
+  background-color: ${colorVal};${transitioned("background-color")}
 }`;
   }
-  const arbTextMatch = cls.match(/^text-\[(.+)\]$/);
+  const arbTextMatch = cls.match(/^text-\[(.+)\](?:\/(\d+))?$/);
   if (arbTextMatch) {
+    const [, val, opStr] = arbTextMatch;
+    const isSizeValue = val.endsWith("px") || val.endsWith("em") || val.endsWith("rem") || val.endsWith("%") || val.endsWith("vw") || val.endsWith("vh") || val.endsWith("ch") || val.endsWith("ex") || val.endsWith("dvh") || /^[\d.]/.test(val) || /^(calc|clamp|min|max)\(/.test(val);
+    if (isSizeValue) {
+      return `.${escapeSelector(cls)} {
+  font-size: ${val};
+}`;
+    }
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
     return `.${escapeSelector(cls)} {
-  color: ${arbTextMatch[1]};${transitioned("color")}
+  color: ${colorVal};${transitioned("color")}
 }`;
   }
-  const arbBorderColorMatch = cls.match(/^border-\[#[0-9a-fA-F]|^border-\[rgb|^border-\[hsl|^border-\[oklch/);
+  const arbBorderColorMatch = cls.match(/^border-\[(.+)\](?:\/(\d+))?$/);
   if (arbBorderColorMatch) {
-    const m = cls.match(/^border-\[(.+)\]$/);
-    if (m) {
+    const [, val, opStr] = arbBorderColorMatch;
+    const looksLikeColor = val.startsWith("#") || val.startsWith("rgb") || val.startsWith("hsl") || val.startsWith("oklch") || val.startsWith("var(") || val === "transparent" || val === "currentColor";
+    if (looksLikeColor) {
+      const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
       return `.${escapeSelector(cls)} {
-  border-color: ${m[1]};${transitioned("border-color")}
+  border-color: ${colorVal};${transitioned("border-color")}
 }`;
     }
   }
-  const arbFillMatch = cls.match(/^fill-\[(.+)\]$/);
-  if (arbFillMatch) {
+  const arbRingColorMatch = cls.match(/^ring-\[(.+)\](?:\/(\d+))?$/);
+  if (arbRingColorMatch) {
+    const [, val, opStr] = arbRingColorMatch;
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
     return `.${escapeSelector(cls)} {
-  fill: ${arbFillMatch[1]};
+  --alive-ring-color: ${colorVal};
 }`;
   }
-  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\]$/);
-  if (arbStrokeMatch) {
+  const arbFillMatch = cls.match(/^fill-\[(.+)\](?:\/(\d+))?$/);
+  if (arbFillMatch) {
+    const [, val, opStr] = arbFillMatch;
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
     return `.${escapeSelector(cls)} {
-  stroke: ${arbStrokeMatch[1]};
+  fill: ${colorVal};
+}`;
+  }
+  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\](?:\/(\d+))?$/);
+  if (arbStrokeMatch) {
+    const [, val, opStr] = arbStrokeMatch;
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val;
+    return `.${escapeSelector(cls)} {
+  stroke: ${colorVal};
 }`;
   }
   return null;
@@ -2386,182 +2422,182 @@ function has(obj, key) {
 function matchSpacing(cls, spacing) {
   const pMatch = cls.match(/^p-(.+)$/);
   if (pMatch && has(spacing, pMatch[1])) {
-    return `.${cls} { padding: ${spacing[pMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding: ${spacing[pMatch[1]]}; }`;
   }
   const pxMatch = cls.match(/^px-(.+)$/);
   if (pxMatch && has(spacing, pxMatch[1])) {
-    return `.${cls} { padding-left: ${spacing[pxMatch[1]]}; padding-right: ${spacing[pxMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-left: ${spacing[pxMatch[1]]}; padding-right: ${spacing[pxMatch[1]]}; }`;
   }
   const pyMatch = cls.match(/^py-(.+)$/);
   if (pyMatch && has(spacing, pyMatch[1])) {
-    return `.${cls} { padding-top: ${spacing[pyMatch[1]]}; padding-bottom: ${spacing[pyMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-top: ${spacing[pyMatch[1]]}; padding-bottom: ${spacing[pyMatch[1]]}; }`;
   }
   const ptMatch = cls.match(/^pt-(.+)$/);
   if (ptMatch && has(spacing, ptMatch[1])) {
-    return `.${cls} { padding-top: ${spacing[ptMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-top: ${spacing[ptMatch[1]]}; }`;
   }
   const prMatch = cls.match(/^pr-(.+)$/);
   if (prMatch && has(spacing, prMatch[1])) {
-    return `.${cls} { padding-right: ${spacing[prMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-right: ${spacing[prMatch[1]]}; }`;
   }
   const pbMatch = cls.match(/^pb-(.+)$/);
   if (pbMatch && has(spacing, pbMatch[1])) {
-    return `.${cls} { padding-bottom: ${spacing[pbMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-bottom: ${spacing[pbMatch[1]]}; }`;
   }
   const plMatch = cls.match(/^pl-(.+)$/);
   if (plMatch && has(spacing, plMatch[1])) {
-    return `.${cls} { padding-left: ${spacing[plMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { padding-left: ${spacing[plMatch[1]]}; }`;
   }
   const mMatch = cls.match(/^m-(.+)$/);
   if (mMatch) {
-    if (mMatch[1] === "auto") return `.${cls} { margin: auto; }`;
-    if (has(spacing, mMatch[1])) return `.${cls} { margin: ${spacing[mMatch[1]]}; }`;
+    if (mMatch[1] === "auto") return `.${escapeSelector(cls)} { margin: auto; }`;
+    if (has(spacing, mMatch[1])) return `.${escapeSelector(cls)} { margin: ${spacing[mMatch[1]]}; }`;
   }
   const mxMatch = cls.match(/^mx-(.+)$/);
   if (mxMatch) {
-    if (mxMatch[1] === "auto") return `.${cls} { margin-left: auto; margin-right: auto; }`;
-    if (has(spacing, mxMatch[1])) return `.${cls} { margin-left: ${spacing[mxMatch[1]]}; margin-right: ${spacing[mxMatch[1]]}; }`;
+    if (mxMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-left: auto; margin-right: auto; }`;
+    if (has(spacing, mxMatch[1])) return `.${escapeSelector(cls)} { margin-left: ${spacing[mxMatch[1]]}; margin-right: ${spacing[mxMatch[1]]}; }`;
   }
   const myMatch = cls.match(/^my-(.+)$/);
   if (myMatch) {
-    if (myMatch[1] === "auto") return `.${cls} { margin-top: auto; margin-bottom: auto; }`;
-    if (has(spacing, myMatch[1])) return `.${cls} { margin-top: ${spacing[myMatch[1]]}; margin-bottom: ${spacing[myMatch[1]]}; }`;
+    if (myMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-top: auto; margin-bottom: auto; }`;
+    if (has(spacing, myMatch[1])) return `.${escapeSelector(cls)} { margin-top: ${spacing[myMatch[1]]}; margin-bottom: ${spacing[myMatch[1]]}; }`;
   }
   const mtMatch = cls.match(/^mt-(.+)$/);
   if (mtMatch) {
-    if (mtMatch[1] === "auto") return `.${cls} { margin-top: auto; }`;
-    if (has(spacing, mtMatch[1])) return `.${cls} { margin-top: ${spacing[mtMatch[1]]}; }`;
+    if (mtMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-top: auto; }`;
+    if (has(spacing, mtMatch[1])) return `.${escapeSelector(cls)} { margin-top: ${spacing[mtMatch[1]]}; }`;
   }
   const mrMatch = cls.match(/^mr-(.+)$/);
   if (mrMatch) {
-    if (mrMatch[1] === "auto") return `.${cls} { margin-right: auto; }`;
-    if (has(spacing, mrMatch[1])) return `.${cls} { margin-right: ${spacing[mrMatch[1]]}; }`;
+    if (mrMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-right: auto; }`;
+    if (has(spacing, mrMatch[1])) return `.${escapeSelector(cls)} { margin-right: ${spacing[mrMatch[1]]}; }`;
   }
   const mbMatch = cls.match(/^mb-(.+)$/);
   if (mbMatch) {
-    if (mbMatch[1] === "auto") return `.${cls} { margin-bottom: auto; }`;
-    if (has(spacing, mbMatch[1])) return `.${cls} { margin-bottom: ${spacing[mbMatch[1]]}; }`;
+    if (mbMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-bottom: auto; }`;
+    if (has(spacing, mbMatch[1])) return `.${escapeSelector(cls)} { margin-bottom: ${spacing[mbMatch[1]]}; }`;
   }
   const mlMatch = cls.match(/^ml-(.+)$/);
   if (mlMatch) {
-    if (mlMatch[1] === "auto") return `.${cls} { margin-left: auto; }`;
-    if (has(spacing, mlMatch[1])) return `.${cls} { margin-left: ${spacing[mlMatch[1]]}; }`;
+    if (mlMatch[1] === "auto") return `.${escapeSelector(cls)} { margin-left: auto; }`;
+    if (has(spacing, mlMatch[1])) return `.${escapeSelector(cls)} { margin-left: ${spacing[mlMatch[1]]}; }`;
   }
   const gapMatch = cls.match(/^gap-(.+)$/);
   if (gapMatch && has(spacing, gapMatch[1])) {
-    return `.${cls} { gap: ${spacing[gapMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { gap: ${spacing[gapMatch[1]]}; }`;
   }
   const gapXMatch = cls.match(/^gap-x-(.+)$/);
   if (gapXMatch && has(spacing, gapXMatch[1])) {
-    return `.${cls} { column-gap: ${spacing[gapXMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { column-gap: ${spacing[gapXMatch[1]]}; }`;
   }
   const gapYMatch = cls.match(/^gap-y-(.+)$/);
   if (gapYMatch && has(spacing, gapYMatch[1])) {
-    return `.${cls} { row-gap: ${spacing[gapYMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { row-gap: ${spacing[gapYMatch[1]]}; }`;
   }
   const spaceXMatch = cls.match(/^space-x-(.+)$/);
   if (spaceXMatch && has(spacing, spaceXMatch[1])) {
-    return `.${cls} > * + * { margin-left: ${spacing[spaceXMatch[1]]}; }`;
+    return `.${escapeSelector(cls)}> * + * { margin-left: ${spacing[spaceXMatch[1]]}; }`;
   }
   const spaceYMatch = cls.match(/^space-y-(.+)$/);
   if (spaceYMatch && has(spacing, spaceYMatch[1])) {
-    return `.${cls} > * + * { margin-top: ${spacing[spaceYMatch[1]]}; }`;
+    return `.${escapeSelector(cls)}> * + * { margin-top: ${spacing[spaceYMatch[1]]}; }`;
   }
   const insetMatch = cls.match(/^inset-(.+)$/);
   if (insetMatch) {
-    if (insetMatch[1] === "auto") return `.${cls} { inset: auto; }`;
-    if (insetMatch[1] === "0") return `.${cls} { inset: 0px; }`;
-    if (has(spacing, insetMatch[1])) return `.${cls} { inset: ${spacing[insetMatch[1]]}; }`;
+    if (insetMatch[1] === "auto") return `.${escapeSelector(cls)} { inset: auto; }`;
+    if (insetMatch[1] === "0") return `.${escapeSelector(cls)} { inset: 0px; }`;
+    if (has(spacing, insetMatch[1])) return `.${escapeSelector(cls)} { inset: ${spacing[insetMatch[1]]}; }`;
   }
   const insetXMatch = cls.match(/^inset-x-(.+)$/);
   if (insetXMatch) {
     const val = insetXMatch[1] === "auto" ? "auto" : insetXMatch[1] === "0" ? "0px" : has(spacing, insetXMatch[1]) ? spacing[insetXMatch[1]] : void 0;
-    if (val) return `.${cls} { left: ${val}; right: ${val}; }`;
+    if (val) return `.${escapeSelector(cls)} { left: ${val}; right: ${val}; }`;
   }
   const insetYMatch = cls.match(/^inset-y-(.+)$/);
   if (insetYMatch) {
     const val = insetYMatch[1] === "auto" ? "auto" : insetYMatch[1] === "0" ? "0px" : has(spacing, insetYMatch[1]) ? spacing[insetYMatch[1]] : void 0;
-    if (val) return `.${cls} { top: ${val}; bottom: ${val}; }`;
+    if (val) return `.${escapeSelector(cls)} { top: ${val}; bottom: ${val}; }`;
   }
   const topMatch = cls.match(/^top-(.+)$/);
   if (topMatch) {
-    if (topMatch[1] === "auto") return `.${cls} { top: auto; }`;
-    if (topMatch[1] === "0") return `.${cls} { top: 0px; }`;
-    if (has(spacing, topMatch[1])) return `.${cls} { top: ${spacing[topMatch[1]]}; }`;
+    if (topMatch[1] === "auto") return `.${escapeSelector(cls)} { top: auto; }`;
+    if (topMatch[1] === "0") return `.${escapeSelector(cls)} { top: 0px; }`;
+    if (has(spacing, topMatch[1])) return `.${escapeSelector(cls)} { top: ${spacing[topMatch[1]]}; }`;
   }
   const rightMatch = cls.match(/^right-(.+)$/);
   if (rightMatch) {
-    if (rightMatch[1] === "auto") return `.${cls} { right: auto; }`;
-    if (rightMatch[1] === "0") return `.${cls} { right: 0px; }`;
-    if (has(spacing, rightMatch[1])) return `.${cls} { right: ${spacing[rightMatch[1]]}; }`;
+    if (rightMatch[1] === "auto") return `.${escapeSelector(cls)} { right: auto; }`;
+    if (rightMatch[1] === "0") return `.${escapeSelector(cls)} { right: 0px; }`;
+    if (has(spacing, rightMatch[1])) return `.${escapeSelector(cls)} { right: ${spacing[rightMatch[1]]}; }`;
   }
   const bottomMatch = cls.match(/^bottom-(.+)$/);
   if (bottomMatch) {
-    if (bottomMatch[1] === "auto") return `.${cls} { bottom: auto; }`;
-    if (bottomMatch[1] === "0") return `.${cls} { bottom: 0px; }`;
-    if (has(spacing, bottomMatch[1])) return `.${cls} { bottom: ${spacing[bottomMatch[1]]}; }`;
+    if (bottomMatch[1] === "auto") return `.${escapeSelector(cls)} { bottom: auto; }`;
+    if (bottomMatch[1] === "0") return `.${escapeSelector(cls)} { bottom: 0px; }`;
+    if (has(spacing, bottomMatch[1])) return `.${escapeSelector(cls)} { bottom: ${spacing[bottomMatch[1]]}; }`;
   }
   const leftMatch = cls.match(/^left-(.+)$/);
   if (leftMatch) {
-    if (leftMatch[1] === "auto") return `.${cls} { left: auto; }`;
-    if (leftMatch[1] === "0") return `.${cls} { left: 0px; }`;
-    if (has(spacing, leftMatch[1])) return `.${cls} { left: ${spacing[leftMatch[1]]}; }`;
+    if (leftMatch[1] === "auto") return `.${escapeSelector(cls)} { left: auto; }`;
+    if (leftMatch[1] === "0") return `.${escapeSelector(cls)} { left: 0px; }`;
+    if (has(spacing, leftMatch[1])) return `.${escapeSelector(cls)} { left: ${spacing[leftMatch[1]]}; }`;
   }
   const negMMatch = cls.match(/^-m-(.+)$/);
   if (negMMatch && has(spacing, negMMatch[1])) {
-    return `.\\-m-${negMMatch[1]} { margin: -${spacing[negMMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin: -${spacing[negMMatch[1]]}; }`;
   }
   const negMxMatch = cls.match(/^-mx-(.+)$/);
   if (negMxMatch && has(spacing, negMxMatch[1])) {
-    return `.\\-mx-${negMxMatch[1]} { margin-left: -${spacing[negMxMatch[1]]}; margin-right: -${spacing[negMxMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-left: -${spacing[negMxMatch[1]]}; margin-right: -${spacing[negMxMatch[1]]}; }`;
   }
   const negMyMatch = cls.match(/^-my-(.+)$/);
   if (negMyMatch && has(spacing, negMyMatch[1])) {
-    return `.\\-my-${negMyMatch[1]} { margin-top: -${spacing[negMyMatch[1]]}; margin-bottom: -${spacing[negMyMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-top: -${spacing[negMyMatch[1]]}; margin-bottom: -${spacing[negMyMatch[1]]}; }`;
   }
   const negMtMatch = cls.match(/^-mt-(.+)$/);
   if (negMtMatch && has(spacing, negMtMatch[1])) {
-    return `.\\-mt-${negMtMatch[1]} { margin-top: -${spacing[negMtMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-top: -${spacing[negMtMatch[1]]}; }`;
   }
   const negMrMatch = cls.match(/^-mr-(.+)$/);
   if (negMrMatch && has(spacing, negMrMatch[1])) {
-    return `.\\-mr-${negMrMatch[1]} { margin-right: -${spacing[negMrMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-right: -${spacing[negMrMatch[1]]}; }`;
   }
   const negMbMatch = cls.match(/^-mb-(.+)$/);
   if (negMbMatch && has(spacing, negMbMatch[1])) {
-    return `.\\-mb-${negMbMatch[1]} { margin-bottom: -${spacing[negMbMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-bottom: -${spacing[negMbMatch[1]]}; }`;
   }
   const negMlMatch = cls.match(/^-ml-(.+)$/);
   if (negMlMatch && has(spacing, negMlMatch[1])) {
-    return `.\\-ml-${negMlMatch[1]} { margin-left: -${spacing[negMlMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { margin-left: -${spacing[negMlMatch[1]]}; }`;
   }
   const negInsetMatch = cls.match(/^-inset-(.+)$/);
   if (negInsetMatch && has(spacing, negInsetMatch[1])) {
-    return `.\\-inset-${negInsetMatch[1]} { inset: -${spacing[negInsetMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { inset: -${spacing[negInsetMatch[1]]}; }`;
   }
   const negInsetXMatch = cls.match(/^-inset-x-(.+)$/);
   if (negInsetXMatch && has(spacing, negInsetXMatch[1])) {
-    return `.\\-inset-x-${negInsetXMatch[1]} { left: -${spacing[negInsetXMatch[1]]}; right: -${spacing[negInsetXMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { left: -${spacing[negInsetXMatch[1]]}; right: -${spacing[negInsetXMatch[1]]}; }`;
   }
   const negInsetYMatch = cls.match(/^-inset-y-(.+)$/);
   if (negInsetYMatch && has(spacing, negInsetYMatch[1])) {
-    return `.\\-inset-y-${negInsetYMatch[1]} { top: -${spacing[negInsetYMatch[1]]}; bottom: -${spacing[negInsetYMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { top: -${spacing[negInsetYMatch[1]]}; bottom: -${spacing[negInsetYMatch[1]]}; }`;
   }
   const negTopMatch = cls.match(/^-top-(.+)$/);
   if (negTopMatch && has(spacing, negTopMatch[1])) {
-    return `.\\-top-${negTopMatch[1]} { top: -${spacing[negTopMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { top: -${spacing[negTopMatch[1]]}; }`;
   }
   const negRightMatch = cls.match(/^-right-(.+)$/);
   if (negRightMatch && has(spacing, negRightMatch[1])) {
-    return `.\\-right-${negRightMatch[1]} { right: -${spacing[negRightMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { right: -${spacing[negRightMatch[1]]}; }`;
   }
   const negBottomMatch = cls.match(/^-bottom-(.+)$/);
   if (negBottomMatch && has(spacing, negBottomMatch[1])) {
-    return `.\\-bottom-${negBottomMatch[1]} { bottom: -${spacing[negBottomMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { bottom: -${spacing[negBottomMatch[1]]}; }`;
   }
   const negLeftMatch = cls.match(/^-left-(.+)$/);
   if (negLeftMatch && has(spacing, negLeftMatch[1])) {
-    return `.\\-left-${negLeftMatch[1]} { left: -${spacing[negLeftMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { left: -${spacing[negLeftMatch[1]]}; }`;
   }
   const arbSpacingMatch = cls.match(/^(w|h|p|m|pt|pr|pb|pl|px|py|mt|mr|mb|ml|mx|my|gap|gap-x|gap-y|top|right|bottom|left|inset|inset-x|inset-y)-\[(.+)\]$/);
   if (arbSpacingMatch) {
@@ -2642,21 +2678,21 @@ function matchTypography(cls, fontSize, fontWeight, lineHeight) {
   const textSizeMatch = cls.match(/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/);
   if (textSizeMatch && hasOwn(fontSize, textSizeMatch[1])) {
     const [size, lh] = fontSize[textSizeMatch[1]];
-    return `.${cls} {
+    return `.${escapeSelector(cls)} {
   font-size: ${size};
   line-height: ${lh};
 }`;
   }
   const fontWeightMatch = cls.match(/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black)$/);
   if (fontWeightMatch && hasOwn(fontWeight, fontWeightMatch[1])) {
-    return `.${cls} { font-weight: ${fontWeight[fontWeightMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { font-weight: ${fontWeight[fontWeightMatch[1]]}; }`;
   }
-  if (cls === "font-sans") return `.${cls} { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }`;
-  if (cls === "font-serif") return `.${cls} { font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; }`;
-  if (cls === "font-mono") return `.${cls} { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }`;
+  if (cls === "font-sans") return `.${escapeSelector(cls)} { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }`;
+  if (cls === "font-serif") return `.${escapeSelector(cls)} { font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; }`;
+  if (cls === "font-mono") return `.${escapeSelector(cls)} { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }`;
   const leadingMatch = cls.match(/^leading-(.+)$/);
   if (leadingMatch && hasOwn(lineHeight, leadingMatch[1])) {
-    return `.${cls} { line-height: ${lineHeight[leadingMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { line-height: ${lineHeight[leadingMatch[1]]}; }`;
   }
   const trackingMap = {
     tighter: "-0.05em",
@@ -2668,63 +2704,49 @@ function matchTypography(cls, fontSize, fontWeight, lineHeight) {
   };
   const trackingMatch = cls.match(/^tracking-(.+)$/);
   if (trackingMatch && Object.prototype.hasOwnProperty.call(trackingMap, trackingMatch[1])) {
-    return `.${cls} { letter-spacing: ${trackingMap[trackingMatch[1]]}; }`;
+    return `.${escapeSelector(cls)} { letter-spacing: ${trackingMap[trackingMatch[1]]}; }`;
   }
-  if (cls === "text-left") return `.${cls} { text-align: left; }`;
-  if (cls === "text-center") return `.${cls} { text-align: center; }`;
-  if (cls === "text-right") return `.${cls} { text-align: right; }`;
-  if (cls === "text-justify") return `.${cls} { text-align: justify; }`;
-  if (cls === "text-start") return `.${cls} { text-align: start; }`;
-  if (cls === "text-end") return `.${cls} { text-align: end; }`;
-  if (cls === "uppercase") return `.${cls} { text-transform: uppercase; }`;
-  if (cls === "lowercase") return `.${cls} { text-transform: lowercase; }`;
-  if (cls === "capitalize") return `.${cls} { text-transform: capitalize; }`;
-  if (cls === "normal-case") return `.${cls} { text-transform: none; }`;
-  if (cls === "underline") return `.${cls} { text-decoration-line: underline; }`;
-  if (cls === "overline") return `.${cls} { text-decoration-line: overline; }`;
-  if (cls === "line-through") return `.${cls} { text-decoration-line: line-through; }`;
-  if (cls === "no-underline") return `.${cls} { text-decoration-line: none; }`;
-  if (cls === "truncate") return `.${cls} { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }`;
-  if (cls === "text-ellipsis") return `.${cls} { text-overflow: ellipsis; }`;
-  if (cls === "text-clip") return `.${cls} { text-overflow: clip; }`;
-  if (cls === "whitespace-normal") return `.${cls} { white-space: normal; }`;
-  if (cls === "whitespace-nowrap") return `.${cls} { white-space: nowrap; }`;
-  if (cls === "whitespace-pre") return `.${cls} { white-space: pre; }`;
-  if (cls === "whitespace-pre-line") return `.${cls} { white-space: pre-line; }`;
-  if (cls === "whitespace-pre-wrap") return `.${cls} { white-space: pre-wrap; }`;
-  if (cls === "whitespace-break-spaces") return `.${cls} { white-space: break-spaces; }`;
-  if (cls === "italic") return `.${cls} { font-style: italic; }`;
-  if (cls === "not-italic") return `.${cls} { font-style: normal; }`;
-  if (cls === "tabular-nums") return `.${cls} { font-variant-numeric: tabular-nums; }`;
-  if (cls === "oldstyle-nums") return `.${cls} { font-variant-numeric: oldstyle-nums; }`;
-  if (cls === "list-none") return `.${cls} { list-style-type: none; }`;
-  if (cls === "list-disc") return `.${cls} { list-style-type: disc; }`;
-  if (cls === "list-decimal") return `.${cls} { list-style-type: decimal; }`;
-  if (cls === "break-normal") return `.${cls} { overflow-wrap: normal; word-break: normal; }`;
-  if (cls === "break-words") return `.${cls} { overflow-wrap: break-word; }`;
-  if (cls === "break-all") return `.${cls} { word-break: break-all; }`;
-  if (cls === "break-keep") return `.${cls} { word-break: keep-all; }`;
+  if (cls === "text-left") return `.${escapeSelector(cls)} { text-align: left; }`;
+  if (cls === "text-center") return `.${escapeSelector(cls)} { text-align: center; }`;
+  if (cls === "text-right") return `.${escapeSelector(cls)} { text-align: right; }`;
+  if (cls === "text-justify") return `.${escapeSelector(cls)} { text-align: justify; }`;
+  if (cls === "text-start") return `.${escapeSelector(cls)} { text-align: start; }`;
+  if (cls === "text-end") return `.${escapeSelector(cls)} { text-align: end; }`;
+  if (cls === "uppercase") return `.${escapeSelector(cls)} { text-transform: uppercase; }`;
+  if (cls === "lowercase") return `.${escapeSelector(cls)} { text-transform: lowercase; }`;
+  if (cls === "capitalize") return `.${escapeSelector(cls)} { text-transform: capitalize; }`;
+  if (cls === "normal-case") return `.${escapeSelector(cls)} { text-transform: none; }`;
+  if (cls === "underline") return `.${escapeSelector(cls)} { text-decoration-line: underline; }`;
+  if (cls === "overline") return `.${escapeSelector(cls)} { text-decoration-line: overline; }`;
+  if (cls === "line-through") return `.${escapeSelector(cls)} { text-decoration-line: line-through; }`;
+  if (cls === "no-underline") return `.${escapeSelector(cls)} { text-decoration-line: none; }`;
+  if (cls === "truncate") return `.${escapeSelector(cls)} { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }`;
+  if (cls === "text-ellipsis") return `.${escapeSelector(cls)} { text-overflow: ellipsis; }`;
+  if (cls === "text-clip") return `.${escapeSelector(cls)} { text-overflow: clip; }`;
+  if (cls === "whitespace-normal") return `.${escapeSelector(cls)} { white-space: normal; }`;
+  if (cls === "whitespace-nowrap") return `.${escapeSelector(cls)} { white-space: nowrap; }`;
+  if (cls === "whitespace-pre") return `.${escapeSelector(cls)} { white-space: pre; }`;
+  if (cls === "whitespace-pre-line") return `.${escapeSelector(cls)} { white-space: pre-line; }`;
+  if (cls === "whitespace-pre-wrap") return `.${escapeSelector(cls)} { white-space: pre-wrap; }`;
+  if (cls === "whitespace-break-spaces") return `.${escapeSelector(cls)} { white-space: break-spaces; }`;
+  if (cls === "italic") return `.${escapeSelector(cls)} { font-style: italic; }`;
+  if (cls === "not-italic") return `.${escapeSelector(cls)} { font-style: normal; }`;
+  if (cls === "tabular-nums") return `.${escapeSelector(cls)} { font-variant-numeric: tabular-nums; }`;
+  if (cls === "oldstyle-nums") return `.${escapeSelector(cls)} { font-variant-numeric: oldstyle-nums; }`;
+  if (cls === "list-none") return `.${escapeSelector(cls)} { list-style-type: none; }`;
+  if (cls === "list-disc") return `.${escapeSelector(cls)} { list-style-type: disc; }`;
+  if (cls === "list-decimal") return `.${escapeSelector(cls)} { list-style-type: decimal; }`;
+  if (cls === "break-normal") return `.${escapeSelector(cls)} { overflow-wrap: normal; word-break: normal; }`;
+  if (cls === "break-words") return `.${escapeSelector(cls)} { overflow-wrap: break-word; }`;
+  if (cls === "break-all") return `.${escapeSelector(cls)} { word-break: break-all; }`;
+  if (cls === "break-keep") return `.${escapeSelector(cls)} { word-break: keep-all; }`;
   return null;
 }
 
 // src/generator/layout.ts
-function has2(obj, key) {
-  return typeof obj[key] === "string";
-}
-function generateLayout(classes, config) {
-  const { spacing } = config.theme;
+function generateLayout(classes, _config) {
   const rules = [];
   for (const cls of classes) {
-    const spaceYMatch = cls.match(/^space-y-(.+)$/);
-    if (spaceYMatch && has2(spacing, spaceYMatch[1])) {
-      rules.push(`.${escapeSelector(cls)} > * + * { margin-top: ${spacing[spaceYMatch[1]]}; }`);
-      continue;
-    }
-    const spaceXMatch = cls.match(/^space-x-(.+)$/);
-    if (spaceXMatch && has2(spacing, spaceXMatch[1])) {
-      rules.push(`.${escapeSelector(cls)} > * + * { margin-left: ${spacing[spaceXMatch[1]]}; }`);
-      continue;
-    }
     const generated = matchLayout(cls);
     if (generated) rules.push(generated);
   }
@@ -2743,7 +2765,7 @@ function matchLayout(cls) {
     hidden: "display: none;",
     contents: "display: contents;"
   };
-  if (displayMap[cls]) return `.${cls} { ${displayMap[cls]} }`;
+  if (displayMap[cls]) return `.${escapeSelector(cls)} { ${displayMap[cls]} }`;
   const posMap = {
     static: "position: static;",
     relative: "position: relative;",
@@ -2751,115 +2773,115 @@ function matchLayout(cls) {
     fixed: "position: fixed;",
     sticky: "position: sticky;"
   };
-  if (posMap[cls]) return `.${cls} { ${posMap[cls]} }`;
-  if (cls === "flex-row") return `.${cls} { flex-direction: row; }`;
-  if (cls === "flex-row-reverse") return `.${cls} { flex-direction: row-reverse; }`;
-  if (cls === "flex-col") return `.${cls} { flex-direction: column; }`;
-  if (cls === "flex-col-reverse") return `.${cls} { flex-direction: column-reverse; }`;
-  if (cls === "flex-wrap") return `.${cls} { flex-wrap: wrap; }`;
-  if (cls === "flex-nowrap") return `.${cls} { flex-wrap: nowrap; }`;
-  if (cls === "flex-wrap-reverse") return `.${cls} { flex-wrap: wrap-reverse; }`;
-  if (cls === "flex-1") return `.${cls} { flex: 1 1 0%; }`;
-  if (cls === "flex-auto") return `.${cls} { flex: 1 1 auto; }`;
-  if (cls === "flex-initial") return `.${cls} { flex: 0 1 auto; }`;
-  if (cls === "flex-none") return `.${cls} { flex: none; }`;
-  if (cls === "flex-grow") return `.${cls} { flex-grow: 1; }`;
-  if (cls === "flex-grow-0") return `.${cls} { flex-grow: 0; }`;
-  if (cls === "flex-shrink") return `.${cls} { flex-shrink: 1; }`;
-  if (cls === "flex-shrink-0") return `.${cls} { flex-shrink: 0; }`;
-  if (cls === "grow") return `.${cls} { flex-grow: 1; }`;
-  if (cls === "grow-0") return `.${cls} { flex-grow: 0; }`;
-  if (cls === "shrink") return `.${cls} { flex-shrink: 1; }`;
-  if (cls === "shrink-0") return `.${cls} { flex-shrink: 0; }`;
-  if (cls === "items-start") return `.${cls} { align-items: flex-start; }`;
-  if (cls === "items-end") return `.${cls} { align-items: flex-end; }`;
-  if (cls === "items-center") return `.${cls} { align-items: center; }`;
-  if (cls === "items-baseline") return `.${cls} { align-items: baseline; }`;
-  if (cls === "items-stretch") return `.${cls} { align-items: stretch; }`;
-  if (cls === "self-auto") return `.${cls} { align-self: auto; }`;
-  if (cls === "self-start") return `.${cls} { align-self: flex-start; }`;
-  if (cls === "self-end") return `.${cls} { align-self: flex-end; }`;
-  if (cls === "self-center") return `.${cls} { align-self: center; }`;
-  if (cls === "self-stretch") return `.${cls} { align-self: stretch; }`;
-  if (cls === "self-baseline") return `.${cls} { align-self: baseline; }`;
-  if (cls === "justify-start") return `.${cls} { justify-content: flex-start; }`;
-  if (cls === "justify-end") return `.${cls} { justify-content: flex-end; }`;
-  if (cls === "justify-center") return `.${cls} { justify-content: center; }`;
-  if (cls === "justify-between") return `.${cls} { justify-content: space-between; }`;
-  if (cls === "justify-around") return `.${cls} { justify-content: space-around; }`;
-  if (cls === "justify-evenly") return `.${cls} { justify-content: space-evenly; }`;
-  if (cls === "justify-stretch") return `.${cls} { justify-content: stretch; }`;
-  if (cls === "justify-items-start") return `.${cls} { justify-items: start; }`;
-  if (cls === "justify-items-end") return `.${cls} { justify-items: end; }`;
-  if (cls === "justify-items-center") return `.${cls} { justify-items: center; }`;
-  if (cls === "justify-items-stretch") return `.${cls} { justify-items: stretch; }`;
-  if (cls === "justify-self-auto") return `.${cls} { justify-self: auto; }`;
-  if (cls === "justify-self-start") return `.${cls} { justify-self: start; }`;
-  if (cls === "justify-self-end") return `.${cls} { justify-self: end; }`;
-  if (cls === "justify-self-center") return `.${cls} { justify-self: center; }`;
-  if (cls === "justify-self-stretch") return `.${cls} { justify-self: stretch; }`;
-  if (cls === "content-normal") return `.${cls} { align-content: normal; }`;
-  if (cls === "content-center") return `.${cls} { align-content: center; }`;
-  if (cls === "content-start") return `.${cls} { align-content: flex-start; }`;
-  if (cls === "content-end") return `.${cls} { align-content: flex-end; }`;
-  if (cls === "content-between") return `.${cls} { align-content: space-between; }`;
-  if (cls === "content-around") return `.${cls} { align-content: space-around; }`;
-  if (cls === "content-evenly") return `.${cls} { align-content: space-evenly; }`;
-  if (cls === "content-stretch") return `.${cls} { align-content: stretch; }`;
-  if (cls === "content-baseline") return `.${cls} { align-content: baseline; }`;
+  if (posMap[cls]) return `.${escapeSelector(cls)} { ${posMap[cls]} }`;
+  if (cls === "flex-row") return `.${escapeSelector(cls)} { flex-direction: row; }`;
+  if (cls === "flex-row-reverse") return `.${escapeSelector(cls)} { flex-direction: row-reverse; }`;
+  if (cls === "flex-col") return `.${escapeSelector(cls)} { flex-direction: column; }`;
+  if (cls === "flex-col-reverse") return `.${escapeSelector(cls)} { flex-direction: column-reverse; }`;
+  if (cls === "flex-wrap") return `.${escapeSelector(cls)} { flex-wrap: wrap; }`;
+  if (cls === "flex-nowrap") return `.${escapeSelector(cls)} { flex-wrap: nowrap; }`;
+  if (cls === "flex-wrap-reverse") return `.${escapeSelector(cls)} { flex-wrap: wrap-reverse; }`;
+  if (cls === "flex-1") return `.${escapeSelector(cls)} { flex: 1 1 0%; }`;
+  if (cls === "flex-auto") return `.${escapeSelector(cls)} { flex: 1 1 auto; }`;
+  if (cls === "flex-initial") return `.${escapeSelector(cls)} { flex: 0 1 auto; }`;
+  if (cls === "flex-none") return `.${escapeSelector(cls)} { flex: none; }`;
+  if (cls === "flex-grow") return `.${escapeSelector(cls)} { flex-grow: 1; }`;
+  if (cls === "flex-grow-0") return `.${escapeSelector(cls)} { flex-grow: 0; }`;
+  if (cls === "flex-shrink") return `.${escapeSelector(cls)} { flex-shrink: 1; }`;
+  if (cls === "flex-shrink-0") return `.${escapeSelector(cls)} { flex-shrink: 0; }`;
+  if (cls === "grow") return `.${escapeSelector(cls)} { flex-grow: 1; }`;
+  if (cls === "grow-0") return `.${escapeSelector(cls)} { flex-grow: 0; }`;
+  if (cls === "shrink") return `.${escapeSelector(cls)} { flex-shrink: 1; }`;
+  if (cls === "shrink-0") return `.${escapeSelector(cls)} { flex-shrink: 0; }`;
+  if (cls === "items-start") return `.${escapeSelector(cls)} { align-items: flex-start; }`;
+  if (cls === "items-end") return `.${escapeSelector(cls)} { align-items: flex-end; }`;
+  if (cls === "items-center") return `.${escapeSelector(cls)} { align-items: center; }`;
+  if (cls === "items-baseline") return `.${escapeSelector(cls)} { align-items: baseline; }`;
+  if (cls === "items-stretch") return `.${escapeSelector(cls)} { align-items: stretch; }`;
+  if (cls === "self-auto") return `.${escapeSelector(cls)} { align-self: auto; }`;
+  if (cls === "self-start") return `.${escapeSelector(cls)} { align-self: flex-start; }`;
+  if (cls === "self-end") return `.${escapeSelector(cls)} { align-self: flex-end; }`;
+  if (cls === "self-center") return `.${escapeSelector(cls)} { align-self: center; }`;
+  if (cls === "self-stretch") return `.${escapeSelector(cls)} { align-self: stretch; }`;
+  if (cls === "self-baseline") return `.${escapeSelector(cls)} { align-self: baseline; }`;
+  if (cls === "justify-start") return `.${escapeSelector(cls)} { justify-content: flex-start; }`;
+  if (cls === "justify-end") return `.${escapeSelector(cls)} { justify-content: flex-end; }`;
+  if (cls === "justify-center") return `.${escapeSelector(cls)} { justify-content: center; }`;
+  if (cls === "justify-between") return `.${escapeSelector(cls)} { justify-content: space-between; }`;
+  if (cls === "justify-around") return `.${escapeSelector(cls)} { justify-content: space-around; }`;
+  if (cls === "justify-evenly") return `.${escapeSelector(cls)} { justify-content: space-evenly; }`;
+  if (cls === "justify-stretch") return `.${escapeSelector(cls)} { justify-content: stretch; }`;
+  if (cls === "justify-items-start") return `.${escapeSelector(cls)} { justify-items: start; }`;
+  if (cls === "justify-items-end") return `.${escapeSelector(cls)} { justify-items: end; }`;
+  if (cls === "justify-items-center") return `.${escapeSelector(cls)} { justify-items: center; }`;
+  if (cls === "justify-items-stretch") return `.${escapeSelector(cls)} { justify-items: stretch; }`;
+  if (cls === "justify-self-auto") return `.${escapeSelector(cls)} { justify-self: auto; }`;
+  if (cls === "justify-self-start") return `.${escapeSelector(cls)} { justify-self: start; }`;
+  if (cls === "justify-self-end") return `.${escapeSelector(cls)} { justify-self: end; }`;
+  if (cls === "justify-self-center") return `.${escapeSelector(cls)} { justify-self: center; }`;
+  if (cls === "justify-self-stretch") return `.${escapeSelector(cls)} { justify-self: stretch; }`;
+  if (cls === "content-normal") return `.${escapeSelector(cls)} { align-content: normal; }`;
+  if (cls === "content-center") return `.${escapeSelector(cls)} { align-content: center; }`;
+  if (cls === "content-start") return `.${escapeSelector(cls)} { align-content: flex-start; }`;
+  if (cls === "content-end") return `.${escapeSelector(cls)} { align-content: flex-end; }`;
+  if (cls === "content-between") return `.${escapeSelector(cls)} { align-content: space-between; }`;
+  if (cls === "content-around") return `.${escapeSelector(cls)} { align-content: space-around; }`;
+  if (cls === "content-evenly") return `.${escapeSelector(cls)} { align-content: space-evenly; }`;
+  if (cls === "content-stretch") return `.${escapeSelector(cls)} { align-content: stretch; }`;
+  if (cls === "content-baseline") return `.${escapeSelector(cls)} { align-content: baseline; }`;
   const gridColsMatch = cls.match(/^grid-cols-(\d+)$/);
   if (gridColsMatch) {
     const n = parseInt(gridColsMatch[1]);
-    return `.${cls} { grid-template-columns: repeat(${n}, minmax(0, 1fr)); }`;
+    return `.${escapeSelector(cls)} { grid-template-columns: repeat(${n}, minmax(0, 1fr)); }`;
   }
-  if (cls === "grid-cols-none") return `.${cls} { grid-template-columns: none; }`;
+  if (cls === "grid-cols-none") return `.${escapeSelector(cls)} { grid-template-columns: none; }`;
   const gridRowsMatch = cls.match(/^grid-rows-(\d+)$/);
   if (gridRowsMatch) {
     const n = parseInt(gridRowsMatch[1]);
-    return `.${cls} { grid-template-rows: repeat(${n}, minmax(0, 1fr)); }`;
+    return `.${escapeSelector(cls)} { grid-template-rows: repeat(${n}, minmax(0, 1fr)); }`;
   }
-  if (cls === "grid-rows-none") return `.${cls} { grid-template-rows: none; }`;
+  if (cls === "grid-rows-none") return `.${escapeSelector(cls)} { grid-template-rows: none; }`;
   const colSpanMatch = cls.match(/^col-span-(\d+)$/);
-  if (colSpanMatch) return `.${cls} { grid-column: span ${colSpanMatch[1]} / span ${colSpanMatch[1]}; }`;
-  if (cls === "col-span-full") return `.${cls} { grid-column: 1 / -1; }`;
-  if (cls === "col-auto") return `.${cls} { grid-column: auto; }`;
+  if (colSpanMatch) return `.${escapeSelector(cls)} { grid-column: span ${colSpanMatch[1]} / span ${colSpanMatch[1]}; }`;
+  if (cls === "col-span-full") return `.${escapeSelector(cls)} { grid-column: 1 / -1; }`;
+  if (cls === "col-auto") return `.${escapeSelector(cls)} { grid-column: auto; }`;
   const rowSpanMatch = cls.match(/^row-span-(\d+)$/);
-  if (rowSpanMatch) return `.${cls} { grid-row: span ${rowSpanMatch[1]} / span ${rowSpanMatch[1]}; }`;
-  if (cls === "row-span-full") return `.${cls} { grid-row: 1 / -1; }`;
-  if (cls === "row-auto") return `.${cls} { grid-row: auto; }`;
+  if (rowSpanMatch) return `.${escapeSelector(cls)} { grid-row: span ${rowSpanMatch[1]} / span ${rowSpanMatch[1]}; }`;
+  if (cls === "row-span-full") return `.${escapeSelector(cls)} { grid-row: 1 / -1; }`;
+  if (cls === "row-auto") return `.${escapeSelector(cls)} { grid-row: auto; }`;
   const colStartMatch = cls.match(/^col-start-(\d+)$/);
-  if (colStartMatch) return `.${cls} { grid-column-start: ${colStartMatch[1]}; }`;
+  if (colStartMatch) return `.${escapeSelector(cls)} { grid-column-start: ${colStartMatch[1]}; }`;
   const colEndMatch = cls.match(/^col-end-(\d+)$/);
-  if (colEndMatch) return `.${cls} { grid-column-end: ${colEndMatch[1]}; }`;
+  if (colEndMatch) return `.${escapeSelector(cls)} { grid-column-end: ${colEndMatch[1]}; }`;
   const rowStartMatch = cls.match(/^row-start-(\d+)$/);
-  if (rowStartMatch) return `.${cls} { grid-row-start: ${rowStartMatch[1]}; }`;
+  if (rowStartMatch) return `.${escapeSelector(cls)} { grid-row-start: ${rowStartMatch[1]}; }`;
   const rowEndMatch = cls.match(/^row-end-(\d+)$/);
-  if (rowEndMatch) return `.${cls} { grid-row-end: ${rowEndMatch[1]}; }`;
+  if (rowEndMatch) return `.${escapeSelector(cls)} { grid-row-end: ${rowEndMatch[1]}; }`;
   const orderMatch = cls.match(/^order-(-?\d+)$/);
-  if (orderMatch) return `.${cls} { order: ${orderMatch[1]}; }`;
-  if (cls === "order-first") return `.${cls} { order: -9999; }`;
-  if (cls === "order-last") return `.${cls} { order: 9999; }`;
-  if (cls === "order-none") return `.${cls} { order: 0; }`;
-  if (cls === "float-right") return `.${cls} { float: right; }`;
-  if (cls === "float-left") return `.${cls} { float: left; }`;
-  if (cls === "float-none") return `.${cls} { float: none; }`;
+  if (orderMatch) return `.${escapeSelector(cls)} { order: ${orderMatch[1]}; }`;
+  if (cls === "order-first") return `.${escapeSelector(cls)} { order: -9999; }`;
+  if (cls === "order-last") return `.${escapeSelector(cls)} { order: 9999; }`;
+  if (cls === "order-none") return `.${escapeSelector(cls)} { order: 0; }`;
+  if (cls === "float-right") return `.${escapeSelector(cls)} { float: right; }`;
+  if (cls === "float-left") return `.${escapeSelector(cls)} { float: left; }`;
+  if (cls === "float-none") return `.${escapeSelector(cls)} { float: none; }`;
   if (cls === "clearfix") return `.${cls}::after { content: ""; display: table; clear: both; }`;
-  if (cls === "overflow-auto") return `.${cls} { overflow: auto; }`;
-  if (cls === "overflow-hidden") return `.${cls} { overflow: hidden; }`;
-  if (cls === "overflow-clip") return `.${cls} { overflow: clip; }`;
-  if (cls === "overflow-visible") return `.${cls} { overflow: visible; }`;
-  if (cls === "overflow-scroll") return `.${cls} { overflow: scroll; }`;
-  if (cls === "overflow-x-auto") return `.${cls} { overflow-x: auto; }`;
-  if (cls === "overflow-x-hidden") return `.${cls} { overflow-x: hidden; }`;
-  if (cls === "overflow-x-scroll") return `.${cls} { overflow-x: scroll; }`;
-  if (cls === "overflow-y-auto") return `.${cls} { overflow-y: auto; }`;
-  if (cls === "overflow-y-hidden") return `.${cls} { overflow-y: hidden; }`;
-  if (cls === "overflow-y-scroll") return `.${cls} { overflow-y: scroll; }`;
-  if (cls === "visible") return `.${cls} { visibility: visible; }`;
-  if (cls === "invisible") return `.${cls} { visibility: hidden; }`;
-  if (cls === "collapse") return `.${cls} { visibility: collapse; }`;
-  if (cls === "pointer-events-none") return `.${cls} { pointer-events: none; }`;
-  if (cls === "pointer-events-auto") return `.${cls} { pointer-events: auto; }`;
+  if (cls === "overflow-auto") return `.${escapeSelector(cls)} { overflow: auto; }`;
+  if (cls === "overflow-hidden") return `.${escapeSelector(cls)} { overflow: hidden; }`;
+  if (cls === "overflow-clip") return `.${escapeSelector(cls)} { overflow: clip; }`;
+  if (cls === "overflow-visible") return `.${escapeSelector(cls)} { overflow: visible; }`;
+  if (cls === "overflow-scroll") return `.${escapeSelector(cls)} { overflow: scroll; }`;
+  if (cls === "overflow-x-auto") return `.${escapeSelector(cls)} { overflow-x: auto; }`;
+  if (cls === "overflow-x-hidden") return `.${escapeSelector(cls)} { overflow-x: hidden; }`;
+  if (cls === "overflow-x-scroll") return `.${escapeSelector(cls)} { overflow-x: scroll; }`;
+  if (cls === "overflow-y-auto") return `.${escapeSelector(cls)} { overflow-y: auto; }`;
+  if (cls === "overflow-y-hidden") return `.${escapeSelector(cls)} { overflow-y: hidden; }`;
+  if (cls === "overflow-y-scroll") return `.${escapeSelector(cls)} { overflow-y: scroll; }`;
+  if (cls === "visible") return `.${escapeSelector(cls)} { visibility: visible; }`;
+  if (cls === "invisible") return `.${escapeSelector(cls)} { visibility: hidden; }`;
+  if (cls === "collapse") return `.${escapeSelector(cls)} { visibility: collapse; }`;
+  if (cls === "pointer-events-none") return `.${escapeSelector(cls)} { pointer-events: none; }`;
+  if (cls === "pointer-events-auto") return `.${escapeSelector(cls)} { pointer-events: auto; }`;
   const cursorMap = {
     "cursor-auto": "auto",
     "cursor-default": "default",
@@ -2876,30 +2898,30 @@ function matchLayout(cls) {
     "cursor-zoom-in": "zoom-in",
     "cursor-zoom-out": "zoom-out"
   };
-  if (cursorMap[cls]) return `.${cls} { cursor: ${cursorMap[cls]}; }`;
-  if (cls === "select-none") return `.${cls} { user-select: none; }`;
-  if (cls === "select-text") return `.${cls} { user-select: text; }`;
-  if (cls === "select-all") return `.${cls} { user-select: all; }`;
-  if (cls === "select-auto") return `.${cls} { user-select: auto; }`;
-  if (cls === "object-contain") return `.${cls} { object-fit: contain; }`;
-  if (cls === "object-cover") return `.${cls} { object-fit: cover; }`;
-  if (cls === "object-fill") return `.${cls} { object-fit: fill; }`;
-  if (cls === "object-none") return `.${cls} { object-fit: none; }`;
-  if (cls === "object-scale-down") return `.${cls} { object-fit: scale-down; }`;
-  if (cls === "aspect-auto") return `.${cls} { aspect-ratio: auto; }`;
-  if (cls === "aspect-square") return `.${cls} { aspect-ratio: 1 / 1; }`;
-  if (cls === "aspect-video") return `.${cls} { aspect-ratio: 16 / 9; }`;
+  if (cursorMap[cls]) return `.${escapeSelector(cls)} { cursor: ${cursorMap[cls]}; }`;
+  if (cls === "select-none") return `.${escapeSelector(cls)} { user-select: none; }`;
+  if (cls === "select-text") return `.${escapeSelector(cls)} { user-select: text; }`;
+  if (cls === "select-all") return `.${escapeSelector(cls)} { user-select: all; }`;
+  if (cls === "select-auto") return `.${escapeSelector(cls)} { user-select: auto; }`;
+  if (cls === "object-contain") return `.${escapeSelector(cls)} { object-fit: contain; }`;
+  if (cls === "object-cover") return `.${escapeSelector(cls)} { object-fit: cover; }`;
+  if (cls === "object-fill") return `.${escapeSelector(cls)} { object-fit: fill; }`;
+  if (cls === "object-none") return `.${escapeSelector(cls)} { object-fit: none; }`;
+  if (cls === "object-scale-down") return `.${escapeSelector(cls)} { object-fit: scale-down; }`;
+  if (cls === "aspect-auto") return `.${escapeSelector(cls)} { aspect-ratio: auto; }`;
+  if (cls === "aspect-square") return `.${escapeSelector(cls)} { aspect-ratio: 1 / 1; }`;
+  if (cls === "aspect-video") return `.${escapeSelector(cls)} { aspect-ratio: 16 / 9; }`;
   if (cls === "container") {
-    return `.${cls} {
+    return `.${escapeSelector(cls)} {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
 }`;
   }
-  if (cls === "box-border") return `.${cls} { box-sizing: border-box; }`;
-  if (cls === "box-content") return `.${cls} { box-sizing: content-box; }`;
-  if (cls === "isolate") return `.${cls} { isolation: isolate; }`;
-  if (cls === "isolation-auto") return `.${cls} { isolation: auto; }`;
+  if (cls === "box-border") return `.${escapeSelector(cls)} { box-sizing: border-box; }`;
+  if (cls === "box-content") return `.${escapeSelector(cls)} { box-sizing: content-box; }`;
+  if (cls === "isolate") return `.${escapeSelector(cls)} { isolation: isolate; }`;
+  if (cls === "isolation-auto") return `.${escapeSelector(cls)} { isolation: auto; }`;
   const mixBlendMap = {
     "mix-blend-normal": "normal",
     "mix-blend-multiply": "multiply",
@@ -2914,40 +2936,40 @@ function matchLayout(cls) {
     "mix-blend-difference": "difference",
     "mix-blend-exclusion": "exclusion"
   };
-  if (mixBlendMap[cls]) return `.${cls} { mix-blend-mode: ${mixBlendMap[cls]}; }`;
-  if (cls === "bg-auto") return `.${cls} { background-size: auto; }`;
-  if (cls === "bg-cover") return `.${cls} { background-size: cover; }`;
-  if (cls === "bg-contain") return `.${cls} { background-size: contain; }`;
-  if (cls === "bg-center") return `.${cls} { background-position: center; }`;
-  if (cls === "bg-top") return `.${cls} { background-position: top; }`;
-  if (cls === "bg-bottom") return `.${cls} { background-position: bottom; }`;
-  if (cls === "bg-left") return `.${cls} { background-position: left; }`;
-  if (cls === "bg-right") return `.${cls} { background-position: right; }`;
-  if (cls === "bg-left-top") return `.${cls} { background-position: left top; }`;
-  if (cls === "bg-left-bottom") return `.${cls} { background-position: left bottom; }`;
-  if (cls === "bg-right-top") return `.${cls} { background-position: right top; }`;
-  if (cls === "bg-right-bottom") return `.${cls} { background-position: right bottom; }`;
-  if (cls === "bg-repeat") return `.${cls} { background-repeat: repeat; }`;
-  if (cls === "bg-no-repeat") return `.${cls} { background-repeat: no-repeat; }`;
-  if (cls === "bg-repeat-x") return `.${cls} { background-repeat: repeat-x; }`;
-  if (cls === "bg-repeat-y") return `.${cls} { background-repeat: repeat-y; }`;
-  if (cls === "bg-repeat-round") return `.${cls} { background-repeat: round; }`;
-  if (cls === "bg-repeat-space") return `.${cls} { background-repeat: space; }`;
-  if (cls === "bg-fixed") return `.${cls} { background-attachment: fixed; }`;
-  if (cls === "bg-local") return `.${cls} { background-attachment: local; }`;
-  if (cls === "bg-scroll") return `.${cls} { background-attachment: scroll; }`;
-  if (cls === "bg-origin-border") return `.${cls} { background-origin: border-box; }`;
-  if (cls === "bg-origin-padding") return `.${cls} { background-origin: padding-box; }`;
-  if (cls === "bg-origin-content") return `.${cls} { background-origin: content-box; }`;
-  if (cls === "bg-clip-border") return `.${cls} { background-clip: border-box; }`;
-  if (cls === "bg-clip-padding") return `.${cls} { background-clip: padding-box; }`;
-  if (cls === "bg-clip-content") return `.${cls} { background-clip: content-box; }`;
-  if (cls === "bg-clip-text") return `.${cls} { background-clip: text; -webkit-background-clip: text; }`;
+  if (mixBlendMap[cls]) return `.${escapeSelector(cls)} { mix-blend-mode: ${mixBlendMap[cls]}; }`;
+  if (cls === "bg-auto") return `.${escapeSelector(cls)} { background-size: auto; }`;
+  if (cls === "bg-cover") return `.${escapeSelector(cls)} { background-size: cover; }`;
+  if (cls === "bg-contain") return `.${escapeSelector(cls)} { background-size: contain; }`;
+  if (cls === "bg-center") return `.${escapeSelector(cls)} { background-position: center; }`;
+  if (cls === "bg-top") return `.${escapeSelector(cls)} { background-position: top; }`;
+  if (cls === "bg-bottom") return `.${escapeSelector(cls)} { background-position: bottom; }`;
+  if (cls === "bg-left") return `.${escapeSelector(cls)} { background-position: left; }`;
+  if (cls === "bg-right") return `.${escapeSelector(cls)} { background-position: right; }`;
+  if (cls === "bg-left-top") return `.${escapeSelector(cls)} { background-position: left top; }`;
+  if (cls === "bg-left-bottom") return `.${escapeSelector(cls)} { background-position: left bottom; }`;
+  if (cls === "bg-right-top") return `.${escapeSelector(cls)} { background-position: right top; }`;
+  if (cls === "bg-right-bottom") return `.${escapeSelector(cls)} { background-position: right bottom; }`;
+  if (cls === "bg-repeat") return `.${escapeSelector(cls)} { background-repeat: repeat; }`;
+  if (cls === "bg-no-repeat") return `.${escapeSelector(cls)} { background-repeat: no-repeat; }`;
+  if (cls === "bg-repeat-x") return `.${escapeSelector(cls)} { background-repeat: repeat-x; }`;
+  if (cls === "bg-repeat-y") return `.${escapeSelector(cls)} { background-repeat: repeat-y; }`;
+  if (cls === "bg-repeat-round") return `.${escapeSelector(cls)} { background-repeat: round; }`;
+  if (cls === "bg-repeat-space") return `.${escapeSelector(cls)} { background-repeat: space; }`;
+  if (cls === "bg-fixed") return `.${escapeSelector(cls)} { background-attachment: fixed; }`;
+  if (cls === "bg-local") return `.${escapeSelector(cls)} { background-attachment: local; }`;
+  if (cls === "bg-scroll") return `.${escapeSelector(cls)} { background-attachment: scroll; }`;
+  if (cls === "bg-origin-border") return `.${escapeSelector(cls)} { background-origin: border-box; }`;
+  if (cls === "bg-origin-padding") return `.${escapeSelector(cls)} { background-origin: padding-box; }`;
+  if (cls === "bg-origin-content") return `.${escapeSelector(cls)} { background-origin: content-box; }`;
+  if (cls === "bg-clip-border") return `.${escapeSelector(cls)} { background-clip: border-box; }`;
+  if (cls === "bg-clip-padding") return `.${escapeSelector(cls)} { background-clip: padding-box; }`;
+  if (cls === "bg-clip-content") return `.${escapeSelector(cls)} { background-clip: content-box; }`;
+  if (cls === "bg-clip-text") return `.${escapeSelector(cls)} { background-clip: text; -webkit-background-clip: text; }`;
   return null;
 }
 
 // src/generator/sizing.ts
-function has3(obj, key) {
+function has2(obj, key) {
   return typeof obj[key] === "string";
 }
 function generateSizing(classes, config) {
@@ -2991,25 +3013,25 @@ function matchSizing(cls, spacing) {
   const wMatch = cls.match(/^w-(.+)$/);
   if (wMatch) {
     const key = wMatch[1];
-    if (key === "auto") return `.${cls} { width: auto; }`;
-    if (key === "full") return `.${cls} { width: 100%; }`;
-    if (key === "screen") return `.${cls} { width: 100vw; }`;
-    if (key === "svw") return `.${cls} { width: 100svw; }`;
-    if (key === "min") return `.${cls} { width: min-content; }`;
-    if (key === "max") return `.${cls} { width: max-content; }`;
-    if (key === "fit") return `.${cls} { width: fit-content; }`;
-    if (has3(fractions, key)) return `.${cls} { width: ${fractions[key]}; }`;
-    if (has3(spacing, key)) return `.${cls} { width: ${spacing[key]}; }`;
+    if (key === "auto") return `.${escapeSelector(cls)} { width: auto; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { width: 100%; }`;
+    if (key === "screen") return `.${escapeSelector(cls)} { width: 100vw; }`;
+    if (key === "svw") return `.${escapeSelector(cls)} { width: 100svw; }`;
+    if (key === "min") return `.${escapeSelector(cls)} { width: min-content; }`;
+    if (key === "max") return `.${escapeSelector(cls)} { width: max-content; }`;
+    if (key === "fit") return `.${escapeSelector(cls)} { width: fit-content; }`;
+    if (has2(fractions, key)) return `.${escapeSelector(cls)} { width: ${fractions[key]}; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { width: ${spacing[key]}; }`;
   }
   const minWMatch = cls.match(/^min-w-(.+)$/);
   if (minWMatch) {
     const key = minWMatch[1];
-    if (key === "0") return `.${cls} { min-width: 0px; }`;
-    if (key === "full") return `.${cls} { min-width: 100%; }`;
-    if (key === "min") return `.${cls} { min-width: min-content; }`;
-    if (key === "max") return `.${cls} { min-width: max-content; }`;
-    if (key === "fit") return `.${cls} { min-width: fit-content; }`;
-    if (has3(spacing, key)) return `.${cls} { min-width: ${spacing[key]}; }`;
+    if (key === "0") return `.${escapeSelector(cls)} { min-width: 0px; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { min-width: 100%; }`;
+    if (key === "min") return `.${escapeSelector(cls)} { min-width: min-content; }`;
+    if (key === "max") return `.${escapeSelector(cls)} { min-width: max-content; }`;
+    if (key === "fit") return `.${escapeSelector(cls)} { min-width: fit-content; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { min-width: ${spacing[key]}; }`;
   }
   const maxWMap = {
     none: "none",
@@ -3036,59 +3058,59 @@ function matchSizing(cls, spacing) {
     "screen-2xl": "1536px"
   };
   const maxWMatch = cls.match(/^max-w-(.+)$/);
-  if (maxWMatch && has3(maxWMap, maxWMatch[1])) {
-    return `.${cls} { max-width: ${maxWMap[maxWMatch[1]]}; }`;
+  if (maxWMatch && has2(maxWMap, maxWMatch[1])) {
+    return `.${escapeSelector(cls)} { max-width: ${maxWMap[maxWMatch[1]]}; }`;
   }
   const hMatch = cls.match(/^h-(.+)$/);
   if (hMatch) {
     const key = hMatch[1];
-    if (key === "auto") return `.${cls} { height: auto; }`;
-    if (key === "full") return `.${cls} { height: 100%; }`;
-    if (key === "screen") return `.${cls} { height: 100vh; }`;
-    if (key === "svh") return `.${cls} { height: 100svh; }`;
-    if (key === "dvh") return `.${cls} { height: 100dvh; }`;
-    if (key === "min") return `.${cls} { height: min-content; }`;
-    if (key === "max") return `.${cls} { height: max-content; }`;
-    if (key === "fit") return `.${cls} { height: fit-content; }`;
-    if (has3(fractions, key)) return `.${cls} { height: ${fractions[key]}; }`;
-    if (has3(spacing, key)) return `.${cls} { height: ${spacing[key]}; }`;
+    if (key === "auto") return `.${escapeSelector(cls)} { height: auto; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { height: 100%; }`;
+    if (key === "screen") return `.${escapeSelector(cls)} { height: 100vh; }`;
+    if (key === "svh") return `.${escapeSelector(cls)} { height: 100svh; }`;
+    if (key === "dvh") return `.${escapeSelector(cls)} { height: 100dvh; }`;
+    if (key === "min") return `.${escapeSelector(cls)} { height: min-content; }`;
+    if (key === "max") return `.${escapeSelector(cls)} { height: max-content; }`;
+    if (key === "fit") return `.${escapeSelector(cls)} { height: fit-content; }`;
+    if (has2(fractions, key)) return `.${escapeSelector(cls)} { height: ${fractions[key]}; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { height: ${spacing[key]}; }`;
   }
   const minHMatch = cls.match(/^min-h-(.+)$/);
   if (minHMatch) {
     const key = minHMatch[1];
-    if (key === "0") return `.${cls} { min-height: 0px; }`;
-    if (key === "full") return `.${cls} { min-height: 100%; }`;
-    if (key === "screen") return `.${cls} { min-height: 100vh; }`;
-    if (key === "svh") return `.${cls} { min-height: 100svh; }`;
-    if (key === "dvh") return `.${cls} { min-height: 100dvh; }`;
-    if (key === "fit") return `.${cls} { min-height: fit-content; }`;
-    if (has3(spacing, key)) return `.${cls} { min-height: ${spacing[key]}; }`;
+    if (key === "0") return `.${escapeSelector(cls)} { min-height: 0px; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { min-height: 100%; }`;
+    if (key === "screen") return `.${escapeSelector(cls)} { min-height: 100vh; }`;
+    if (key === "svh") return `.${escapeSelector(cls)} { min-height: 100svh; }`;
+    if (key === "dvh") return `.${escapeSelector(cls)} { min-height: 100dvh; }`;
+    if (key === "fit") return `.${escapeSelector(cls)} { min-height: fit-content; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { min-height: ${spacing[key]}; }`;
   }
   const maxHMatch = cls.match(/^max-h-(.+)$/);
   if (maxHMatch) {
     const key = maxHMatch[1];
-    if (key === "none") return `.${cls} { max-height: none; }`;
-    if (key === "full") return `.${cls} { max-height: 100%; }`;
-    if (key === "screen") return `.${cls} { max-height: 100vh; }`;
-    if (key === "svh") return `.${cls} { max-height: 100svh; }`;
-    if (key === "dvh") return `.${cls} { max-height: 100dvh; }`;
-    if (key === "fit") return `.${cls} { max-height: fit-content; }`;
-    if (has3(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`;
+    if (key === "none") return `.${escapeSelector(cls)} { max-height: none; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { max-height: 100%; }`;
+    if (key === "screen") return `.${escapeSelector(cls)} { max-height: 100vh; }`;
+    if (key === "svh") return `.${escapeSelector(cls)} { max-height: 100svh; }`;
+    if (key === "dvh") return `.${escapeSelector(cls)} { max-height: 100dvh; }`;
+    if (key === "fit") return `.${escapeSelector(cls)} { max-height: fit-content; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { max-height: ${spacing[key]}; }`;
   }
   const basisMatch = cls.match(/^basis-(.+)$/);
   if (basisMatch) {
     const key = basisMatch[1];
-    if (key === "auto") return `.${cls} { flex-basis: auto; }`;
-    if (key === "full") return `.${cls} { flex-basis: 100%; }`;
-    if (key === "0") return `.${cls} { flex-basis: 0px; }`;
-    if (has3(fractions, key)) return `.${cls} { flex-basis: ${fractions[key]}; }`;
-    if (has3(spacing, key)) return `.${cls} { flex-basis: ${spacing[key]}; }`;
+    if (key === "auto") return `.${escapeSelector(cls)} { flex-basis: auto; }`;
+    if (key === "full") return `.${escapeSelector(cls)} { flex-basis: 100%; }`;
+    if (key === "0") return `.${escapeSelector(cls)} { flex-basis: 0px; }`;
+    if (has2(fractions, key)) return `.${escapeSelector(cls)} { flex-basis: ${fractions[key]}; }`;
+    if (has2(spacing, key)) return `.${escapeSelector(cls)} { flex-basis: ${spacing[key]}; }`;
   }
   return null;
 }
 
 // src/generator/effects.ts
-function has4(obj, key) {
+function has3(obj, key) {
   return typeof obj[key] === "string";
 }
 function generateEffects(classes, config) {
@@ -3102,8 +3124,8 @@ function generateEffects(classes, config) {
 }
 function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
   const opacityMatch = cls.match(/^opacity-(.+)$/);
-  if (opacityMatch && has4(opacity, opacityMatch[1])) {
-    return `.${cls} {
+  if (opacityMatch && has3(opacity, opacityMatch[1])) {
+    return `.${escapeSelector(cls)} {
   opacity: ${opacity[opacityMatch[1]]};
   transition-property: opacity;
   transition-duration: var(--alive-duration, 0ms);
@@ -3111,87 +3133,87 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
 }`;
   }
   const zMatch = cls.match(/^z-(.+)$/);
-  if (zMatch && has4(zIndex, zMatch[1])) {
-    return `.${cls} { z-index: ${zIndex[zMatch[1]]}; }`;
+  if (zMatch && has3(zIndex, zMatch[1])) {
+    return `.${escapeSelector(cls)} { z-index: ${zIndex[zMatch[1]]}; }`;
   }
   const shadowMatch = cls.match(/^shadow(?:-(.+))?$/);
   if (shadowMatch) {
     const key = shadowMatch[1] ?? "DEFAULT";
-    if (has4(boxShadow, key)) {
-      return `.${cls} { box-shadow: ${boxShadow[key]}; }`;
+    if (has3(boxShadow, key)) {
+      return `.${escapeSelector(cls)} { box-shadow: ${boxShadow[key]}; }`;
     }
-    if (!shadowMatch[1] && has4(boxShadow, "DEFAULT")) {
-      return `.${cls} { box-shadow: ${boxShadow["DEFAULT"]}; }`;
+    if (!shadowMatch[1] && has3(boxShadow, "DEFAULT")) {
+      return `.${escapeSelector(cls)} { box-shadow: ${boxShadow["DEFAULT"]}; }`;
     }
   }
   const roundedMatch = cls.match(/^rounded(?:-(.+))?$/);
   if (roundedMatch) {
     const key = roundedMatch[1] ?? "DEFAULT";
-    if (has4(borderRadius, key)) return `.${cls} { border-radius: ${borderRadius[key]}; }`;
-    if (!roundedMatch[1] && has4(borderRadius, "DEFAULT")) return `.${cls} { border-radius: ${borderRadius["DEFAULT"]}; }`;
+    if (has3(borderRadius, key)) return `.${escapeSelector(cls)} { border-radius: ${borderRadius[key]}; }`;
+    if (!roundedMatch[1] && has3(borderRadius, "DEFAULT")) return `.${escapeSelector(cls)} { border-radius: ${borderRadius["DEFAULT"]}; }`;
   }
   const roundedTMatch = cls.match(/^rounded-t(?:-(.+))?$/);
   if (roundedTMatch) {
     const rkey = roundedTMatch[1] ?? "DEFAULT";
-    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
-    if (val) return `.${cls} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`;
+    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    if (val) return `.${escapeSelector(cls)} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`;
   }
   const roundedBMatch = cls.match(/^rounded-b(?:-(.+))?$/);
   if (roundedBMatch) {
     const rkey = roundedBMatch[1] ?? "DEFAULT";
-    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
-    if (val) return `.${cls} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`;
+    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    if (val) return `.${escapeSelector(cls)} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`;
   }
   const roundedLMatch = cls.match(/^rounded-l(?:-(.+))?$/);
   if (roundedLMatch) {
     const rkey = roundedLMatch[1] ?? "DEFAULT";
-    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
-    if (val) return `.${cls} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`;
+    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    if (val) return `.${escapeSelector(cls)} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`;
   }
   const roundedRMatch = cls.match(/^rounded-r(?:-(.+))?$/);
   if (roundedRMatch) {
     const rkey = roundedRMatch[1] ?? "DEFAULT";
-    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
-    if (val) return `.${cls} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`;
+    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    if (val) return `.${escapeSelector(cls)} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`;
   }
-  if (cls === "border") return `.${cls} { border-width: 1px; border-style: solid; }`;
-  if (cls === "border-0") return `.${cls} { border-width: 0px; }`;
-  if (cls === "border-2") return `.${cls} { border-width: 2px; border-style: solid; }`;
-  if (cls === "border-4") return `.${cls} { border-width: 4px; border-style: solid; }`;
-  if (cls === "border-8") return `.${cls} { border-width: 8px; border-style: solid; }`;
-  if (cls === "border-t") return `.${cls} { border-top-width: 1px; border-top-style: solid; }`;
-  if (cls === "border-r") return `.${cls} { border-right-width: 1px; border-right-style: solid; }`;
-  if (cls === "border-b") return `.${cls} { border-bottom-width: 1px; border-bottom-style: solid; }`;
-  if (cls === "border-l") return `.${cls} { border-left-width: 1px; border-left-style: solid; }`;
-  if (cls === "border-t-0") return `.${cls} { border-top-width: 0px; }`;
-  if (cls === "border-r-0") return `.${cls} { border-right-width: 0px; }`;
-  if (cls === "border-b-0") return `.${cls} { border-bottom-width: 0px; }`;
-  if (cls === "border-l-0") return `.${cls} { border-left-width: 0px; }`;
-  if (cls === "border-solid") return `.${cls} { border-style: solid; }`;
-  if (cls === "border-dashed") return `.${cls} { border-style: dashed; }`;
-  if (cls === "border-dotted") return `.${cls} { border-style: dotted; }`;
-  if (cls === "border-double") return `.${cls} { border-style: double; }`;
-  if (cls === "border-hidden") return `.${cls} { border-style: hidden; }`;
-  if (cls === "border-none") return `.${cls} { border-style: none; }`;
-  if (cls === "outline-none") return `.${cls} { outline: 2px solid transparent; outline-offset: 2px; }`;
-  if (cls === "outline") return `.${cls} { outline-style: solid; }`;
-  if (cls === "outline-dashed") return `.${cls} { outline-style: dashed; }`;
-  if (cls === "outline-dotted") return `.${cls} { outline-style: dotted; }`;
-  if (cls === "outline-double") return `.${cls} { outline-style: double; }`;
+  if (cls === "border") return `.${escapeSelector(cls)} { border-width: 1px; border-style: solid; }`;
+  if (cls === "border-0") return `.${escapeSelector(cls)} { border-width: 0px; }`;
+  if (cls === "border-2") return `.${escapeSelector(cls)} { border-width: 2px; border-style: solid; }`;
+  if (cls === "border-4") return `.${escapeSelector(cls)} { border-width: 4px; border-style: solid; }`;
+  if (cls === "border-8") return `.${escapeSelector(cls)} { border-width: 8px; border-style: solid; }`;
+  if (cls === "border-t") return `.${escapeSelector(cls)} { border-top-width: 1px; border-top-style: solid; }`;
+  if (cls === "border-r") return `.${escapeSelector(cls)} { border-right-width: 1px; border-right-style: solid; }`;
+  if (cls === "border-b") return `.${escapeSelector(cls)} { border-bottom-width: 1px; border-bottom-style: solid; }`;
+  if (cls === "border-l") return `.${escapeSelector(cls)} { border-left-width: 1px; border-left-style: solid; }`;
+  if (cls === "border-t-0") return `.${escapeSelector(cls)} { border-top-width: 0px; }`;
+  if (cls === "border-r-0") return `.${escapeSelector(cls)} { border-right-width: 0px; }`;
+  if (cls === "border-b-0") return `.${escapeSelector(cls)} { border-bottom-width: 0px; }`;
+  if (cls === "border-l-0") return `.${escapeSelector(cls)} { border-left-width: 0px; }`;
+  if (cls === "border-solid") return `.${escapeSelector(cls)} { border-style: solid; }`;
+  if (cls === "border-dashed") return `.${escapeSelector(cls)} { border-style: dashed; }`;
+  if (cls === "border-dotted") return `.${escapeSelector(cls)} { border-style: dotted; }`;
+  if (cls === "border-double") return `.${escapeSelector(cls)} { border-style: double; }`;
+  if (cls === "border-hidden") return `.${escapeSelector(cls)} { border-style: hidden; }`;
+  if (cls === "border-none") return `.${escapeSelector(cls)} { border-style: none; }`;
+  if (cls === "outline-none") return `.${escapeSelector(cls)} { outline: 2px solid transparent; outline-offset: 2px; }`;
+  if (cls === "outline") return `.${escapeSelector(cls)} { outline-style: solid; }`;
+  if (cls === "outline-dashed") return `.${escapeSelector(cls)} { outline-style: dashed; }`;
+  if (cls === "outline-dotted") return `.${escapeSelector(cls)} { outline-style: dotted; }`;
+  if (cls === "outline-double") return `.${escapeSelector(cls)} { outline-style: double; }`;
   const outlineWidthMatch = cls.match(/^outline-(\d+)$/);
-  if (outlineWidthMatch) return `.${cls} { outline-width: ${outlineWidthMatch[1]}px; }`;
+  if (outlineWidthMatch) return `.${escapeSelector(cls)} { outline-width: ${outlineWidthMatch[1]}px; }`;
   const outlineOffsetMatch = cls.match(/^outline-offset-(\d+)$/);
-  if (outlineOffsetMatch) return `.${cls} { outline-offset: ${outlineOffsetMatch[1]}px; }`;
+  if (outlineOffsetMatch) return `.${escapeSelector(cls)} { outline-offset: ${outlineOffsetMatch[1]}px; }`;
   const ringMatch = cls.match(/^ring(?:-(\d+))?$/);
   if (ringMatch) {
     const width = ringMatch[1] ?? "3";
-    return `.${cls} { box-shadow: 0 0 0 ${width}px var(--alive-ring-color, rgba(59, 130, 246, 0.5)); }`;
+    return `.${escapeSelector(cls)} { box-shadow: 0 0 0 ${width}px var(--alive-ring-color, rgba(59, 130, 246, 0.5)); }`;
   }
-  if (cls === "ring-inset") return `.${cls} { --alive-ring-inset: inset; }`;
+  if (cls === "ring-inset") return `.${escapeSelector(cls)} { --alive-ring-inset: inset; }`;
   const ringOffsetMatch = cls.match(/^ring-offset-(\d+)$/);
-  if (ringOffsetMatch) return `.${cls} { --alive-ring-offset: ${ringOffsetMatch[1]}px; }`;
-  if (cls === "transform") return `.${cls} { transform: translateX(var(--alive-tx,0)) translateY(var(--alive-ty,0)) rotate(var(--alive-rotate,0)) scaleX(var(--alive-sx,1)) scaleY(var(--alive-sy,1)) skewX(var(--alive-skew-x,0)) skewY(var(--alive-skew-y,0)); }`;
-  if (cls === "transform-none") return `.${cls} { transform: none; }`;
+  if (ringOffsetMatch) return `.${escapeSelector(cls)} { --alive-ring-offset: ${ringOffsetMatch[1]}px; }`;
+  if (cls === "transform") return `.${escapeSelector(cls)} { transform: translateX(var(--alive-tx,0)) translateY(var(--alive-ty,0)) rotate(var(--alive-rotate,0)) scaleX(var(--alive-sx,1)) scaleY(var(--alive-sy,1)) skewX(var(--alive-skew-x,0)) skewY(var(--alive-skew-y,0)); }`;
+  if (cls === "transform-none") return `.${escapeSelector(cls)} { transform: none; }`;
   const scaleMap = {
     "0": "0",
     "50": ".5",
@@ -3205,16 +3227,16 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
     "150": "1.5"
   };
   const scaleMatch = cls.match(/^scale-(\d+)$/);
-  if (scaleMatch && has4(scaleMap, scaleMatch[1])) {
-    return `.${cls} { transform: scale(${scaleMap[scaleMatch[1]]}); }`;
+  if (scaleMatch && has3(scaleMap, scaleMatch[1])) {
+    return `.${escapeSelector(cls)} { transform: scale(${scaleMap[scaleMatch[1]]}); }`;
   }
   const scaleXMatch = cls.match(/^scale-x-(\d+)$/);
-  if (scaleXMatch && has4(scaleMap, scaleXMatch[1])) {
-    return `.${cls} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`;
+  if (scaleXMatch && has3(scaleMap, scaleXMatch[1])) {
+    return `.${escapeSelector(cls)} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`;
   }
   const scaleYMatch = cls.match(/^scale-y-(\d+)$/);
-  if (scaleYMatch && has4(scaleMap, scaleYMatch[1])) {
-    return `.${cls} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`;
+  if (scaleYMatch && has3(scaleMap, scaleYMatch[1])) {
+    return `.${escapeSelector(cls)} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`;
   }
   const rotateMatch = cls.match(/^-?rotate-(\d+)$/);
   if (rotateMatch) {
@@ -3237,12 +3259,12 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
     const val = fractions[key] ?? null;
     if (val) return `.${cls.replace(/^-/, "\\-")} { transform: translateY(${neg}${val}); }`;
   }
-  if (cls === "transition-none") return `.${cls} { transition: none; }`;
-  if (cls === "transition-all") return `.${cls} { transition: all var(--alive-duration-normal) var(--alive-ease-standard); }`;
-  if (cls === "transition-colors") return `.${cls} { transition: color, background-color, border-color, text-decoration-color, fill, stroke; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
-  if (cls === "transition-opacity") return `.${cls} { transition: opacity; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
-  if (cls === "transition-shadow") return `.${cls} { transition: box-shadow; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
-  if (cls === "transition-transform") return `.${cls} { transition: transform; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
+  if (cls === "transition-none") return `.${escapeSelector(cls)} { transition: none; }`;
+  if (cls === "transition-all") return `.${escapeSelector(cls)} { transition: all var(--alive-duration-normal) var(--alive-ease-standard); }`;
+  if (cls === "transition-colors") return `.${escapeSelector(cls)} { transition: color, background-color, border-color, text-decoration-color, fill, stroke; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
+  if (cls === "transition-opacity") return `.${escapeSelector(cls)} { transition: opacity; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
+  if (cls === "transition-shadow") return `.${escapeSelector(cls)} { transition: box-shadow; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
+  if (cls === "transition-transform") return `.${escapeSelector(cls)} { transition: transform; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`;
   const blurMatch = cls.match(/^blur(?:-(.+))?$/);
   if (blurMatch) {
     const blurMap = {
@@ -3256,7 +3278,7 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
       "3xl": "64px"
     };
     const key = blurMatch[1] ?? "DEFAULT";
-    if (has4(blurMap, key)) return `.${cls} { filter: blur(${blurMap[key]}); }`;
+    if (has3(blurMap, key)) return `.${escapeSelector(cls)} { filter: blur(${blurMap[key]}); }`;
   }
   const backdropBlurMatch = cls.match(/^backdrop-blur(?:-(.+))?$/);
   if (backdropBlurMatch) {
@@ -3271,7 +3293,7 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
       "3xl": "64px"
     };
     const key = backdropBlurMatch[1] ?? "DEFAULT";
-    if (has4(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`;
+    if (has3(blurMap, key)) return `.${escapeSelector(cls)} { backdrop-filter: blur(${blurMap[key]}); }`;
   }
   const arbOpacityMatch = cls.match(/^opacity-\[(.+)\]$/);
   if (arbOpacityMatch) {
@@ -3400,6 +3422,9 @@ function generateUtilities(classes, config) {
         case "placeholder":
           selector += "::placeholder";
           break;
+        case "file":
+          selector += "::file-selector-button";
+          break;
         case "group-hover":
           selector = `.group:hover ${selector}`;
           break;
@@ -3494,275 +3519,275 @@ function generateAliveSpecific(classes, _config) {
     ];
     if (aliveBasePrefixes.some((p) => cls === p || cls.startsWith(p + "-"))) continue;
     if (cls === "animate-none") {
-      rules.push(`.${cls} { animation: none; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: none; }`);
       continue;
     }
     if (cls === "animate-spin") {
-      rules.push(`.${cls} { animation: alive-spin 1s linear infinite; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: alive-spin 1s linear infinite; }`);
       continue;
     }
     if (cls === "animate-ping") {
-      rules.push(`.${cls} { animation: alive-ping 1s cubic-bezier(0,0,0.2,1) infinite; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: alive-ping 1s cubic-bezier(0,0,0.2,1) infinite; }`);
       continue;
     }
     if (cls === "animate-pulse") {
-      rules.push(`.${cls} { animation: alive-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: alive-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }`);
       continue;
     }
     if (cls === "animate-bounce") {
-      rules.push(`.${cls} { animation: alive-bounce 1s infinite; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: alive-bounce 1s infinite; }`);
       continue;
     }
     if (cls === "animate-shimmer") {
-      rules.push(`.${cls} { animation: alive-shimmer 1.5s linear infinite; }`);
+      rules.push(`.${escapeSelector(cls)} { animation: alive-shimmer 1.5s linear infinite; }`);
       continue;
     }
     if (cls === "ease-linear") {
-      rules.push(`.${cls} { transition-timing-function: linear; }`);
+      rules.push(`.${escapeSelector(cls)} { transition-timing-function: linear; }`);
       continue;
     }
     if (cls === "ease-in") {
-      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,1,1); }`);
+      rules.push(`.${escapeSelector(cls)} { transition-timing-function: cubic-bezier(0.4,0,1,1); }`);
       continue;
     }
     if (cls === "ease-out") {
-      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0,0,0.2,1); }`);
+      rules.push(`.${escapeSelector(cls)} { transition-timing-function: cubic-bezier(0,0,0.2,1); }`);
       continue;
     }
     if (cls === "ease-in-out") {
-      rules.push(`.${cls} { transition-timing-function: cubic-bezier(0.4,0,0.2,1); }`);
+      rules.push(`.${escapeSelector(cls)} { transition-timing-function: cubic-bezier(0.4,0,0.2,1); }`);
       continue;
     }
     if (cls === "group") {
-      rules.push(`.${cls} {}`);
+      rules.push(`.${escapeSelector(cls)} {}`);
       continue;
     }
     const staggerMatch = cls.match(/^stagger-(\d+)$/);
     if (staggerMatch) {
-      rules.push(`.${cls} { --alive-stagger-gap: ${staggerMatch[1]}ms; }`);
+      rules.push(`.${escapeSelector(cls)} { --alive-stagger-gap: ${staggerMatch[1]}ms; }`);
       continue;
     }
     const indexMatch = cls.match(/^alive-index-(\d+)$/);
     if (indexMatch) {
-      rules.push(`.${cls} { --alive-index: ${indexMatch[1]}; }`);
+      rules.push(`.${escapeSelector(cls)} { --alive-index: ${indexMatch[1]}; }`);
       continue;
     }
     const durationMatch = cls.match(/^duration-(\d+)$/);
     if (durationMatch) {
-      rules.push(`.${cls} { --alive-duration: ${durationMatch[1]}ms; }`);
+      rules.push(`.${escapeSelector(cls)} { --alive-duration: ${durationMatch[1]}ms; }`);
       continue;
     }
     const delayMatch = cls.match(/^delay-(\d+)$/);
     if (delayMatch) {
-      rules.push(`.${cls} { animation-delay: ${delayMatch[1]}ms; }`);
+      rules.push(`.${escapeSelector(cls)} { animation-delay: ${delayMatch[1]}ms; }`);
       continue;
     }
     const motionMsMatch = cls.match(/^motion-(\d+)$/);
     if (motionMsMatch) {
-      rules.push(`.${cls} { --alive-duration: ${motionMsMatch[1]}ms !important; }`);
+      rules.push(`.${escapeSelector(cls)} { --alive-duration: ${motionMsMatch[1]}ms !important; }`);
       continue;
     }
     if (cls === "divide-x") {
-      rules.push(`.${cls} > * + * { border-left-width: 1px; border-left-style: solid; }`);
+      rules.push(`.${escapeSelector(cls)}> * + * { border-left-width: 1px; border-left-style: solid; }`);
       continue;
     }
     if (cls === "divide-y") {
-      rules.push(`.${cls} > * + * { border-top-width: 1px; border-top-style: solid; }`);
+      rules.push(`.${escapeSelector(cls)}> * + * { border-top-width: 1px; border-top-style: solid; }`);
       continue;
     }
     const divideColorMatch = cls.match(/^divide-([a-z]+)(?:-(\d+))?$/);
     if (divideColorMatch) {
-      rules.push(`.${cls} > * + * { border-color: inherit; }`);
+      rules.push(`.${escapeSelector(cls)}> * + * { border-color: inherit; }`);
       continue;
     }
     if (cls === "appearance-none") {
-      rules.push(`.${cls} { appearance: none; }`);
+      rules.push(`.${escapeSelector(cls)} { appearance: none; }`);
       continue;
     }
     if (cls === "appearance-auto") {
-      rules.push(`.${cls} { appearance: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { appearance: auto; }`);
       continue;
     }
     if (cls === "resize-none") {
-      rules.push(`.${cls} { resize: none; }`);
+      rules.push(`.${escapeSelector(cls)} { resize: none; }`);
       continue;
     }
     if (cls === "resize") {
-      rules.push(`.${cls} { resize: both; }`);
+      rules.push(`.${escapeSelector(cls)} { resize: both; }`);
       continue;
     }
     if (cls === "resize-y") {
-      rules.push(`.${cls} { resize: vertical; }`);
+      rules.push(`.${escapeSelector(cls)} { resize: vertical; }`);
       continue;
     }
     if (cls === "resize-x") {
-      rules.push(`.${cls} { resize: horizontal; }`);
+      rules.push(`.${escapeSelector(cls)} { resize: horizontal; }`);
       continue;
     }
     if (cls === "snap-none") {
-      rules.push(`.${cls} { scroll-snap-type: none; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-type: none; }`);
       continue;
     }
     if (cls === "snap-x") {
-      rules.push(`.${cls} { scroll-snap-type: x mandatory; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-type: x mandatory; }`);
       continue;
     }
     if (cls === "snap-y") {
-      rules.push(`.${cls} { scroll-snap-type: y mandatory; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-type: y mandatory; }`);
       continue;
     }
     if (cls === "snap-start") {
-      rules.push(`.${cls} { scroll-snap-align: start; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-align: start; }`);
       continue;
     }
     if (cls === "snap-center") {
-      rules.push(`.${cls} { scroll-snap-align: center; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-align: center; }`);
       continue;
     }
     if (cls === "snap-end") {
-      rules.push(`.${cls} { scroll-snap-align: end; }`);
+      rules.push(`.${escapeSelector(cls)} { scroll-snap-align: end; }`);
       continue;
     }
     if (cls === "pointer-events-none") {
-      rules.push(`.${cls} { pointer-events: none; }`);
+      rules.push(`.${escapeSelector(cls)} { pointer-events: none; }`);
       continue;
     }
     if (cls === "pointer-events-auto") {
-      rules.push(`.${cls} { pointer-events: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { pointer-events: auto; }`);
       continue;
     }
     if (cls === "sr-only") {
-      rules.push(`.${cls} { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`);
+      rules.push(`.${escapeSelector(cls)} { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`);
       continue;
     }
     if (cls === "not-sr-only") {
-      rules.push(`.${cls} { position: static; width: auto; height: auto; padding: 0; margin: 0; overflow: visible; clip: auto; white-space: normal; }`);
+      rules.push(`.${escapeSelector(cls)} { position: static; width: auto; height: auto; padding: 0; margin: 0; overflow: visible; clip: auto; white-space: normal; }`);
       continue;
     }
     if (cls === "will-change-auto") {
-      rules.push(`.${cls} { will-change: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { will-change: auto; }`);
       continue;
     }
     if (cls === "will-change-transform") {
-      rules.push(`.${cls} { will-change: transform; }`);
+      rules.push(`.${escapeSelector(cls)} { will-change: transform; }`);
       continue;
     }
     if (cls === "will-change-opacity") {
-      rules.push(`.${cls} { will-change: opacity; }`);
+      rules.push(`.${escapeSelector(cls)} { will-change: opacity; }`);
       continue;
     }
     const lineClampMatch = cls.match(/^line-clamp-(\d+)$/);
     if (lineClampMatch) {
       const n = lineClampMatch[1];
-      rules.push(`.${cls} { overflow: hidden; display: -webkit-box; -webkit-line-clamp: ${n}; -webkit-box-orient: vertical; }`);
+      rules.push(`.${escapeSelector(cls)} { overflow: hidden; display: -webkit-box; -webkit-line-clamp: ${n}; -webkit-box-orient: vertical; }`);
       continue;
     }
     if (cls === "aspect-square") {
-      rules.push(`.${cls} { aspect-ratio: 1 / 1; }`);
+      rules.push(`.${escapeSelector(cls)} { aspect-ratio: 1 / 1; }`);
       continue;
     }
     if (cls === "aspect-video") {
-      rules.push(`.${cls} { aspect-ratio: 16 / 9; }`);
+      rules.push(`.${escapeSelector(cls)} { aspect-ratio: 16 / 9; }`);
       continue;
     }
     if (cls === "aspect-auto") {
-      rules.push(`.${cls} { aspect-ratio: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { aspect-ratio: auto; }`);
       continue;
     }
     if (cls === "object-contain") {
-      rules.push(`.${cls} { object-fit: contain; }`);
+      rules.push(`.${escapeSelector(cls)} { object-fit: contain; }`);
       continue;
     }
     if (cls === "object-cover") {
-      rules.push(`.${cls} { object-fit: cover; }`);
+      rules.push(`.${escapeSelector(cls)} { object-fit: cover; }`);
       continue;
     }
     if (cls === "object-fill") {
-      rules.push(`.${cls} { object-fit: fill; }`);
+      rules.push(`.${escapeSelector(cls)} { object-fit: fill; }`);
       continue;
     }
     if (cls === "object-none") {
-      rules.push(`.${cls} { object-fit: none; }`);
+      rules.push(`.${escapeSelector(cls)} { object-fit: none; }`);
       continue;
     }
     if (cls === "object-scale") {
-      rules.push(`.${cls} { object-fit: scale-down; }`);
+      rules.push(`.${escapeSelector(cls)} { object-fit: scale-down; }`);
       continue;
     }
     if (cls === "mix-blend-multiply") {
-      rules.push(`.${cls} { mix-blend-mode: multiply; }`);
+      rules.push(`.${escapeSelector(cls)} { mix-blend-mode: multiply; }`);
       continue;
     }
     if (cls === "mix-blend-screen") {
-      rules.push(`.${cls} { mix-blend-mode: screen; }`);
+      rules.push(`.${escapeSelector(cls)} { mix-blend-mode: screen; }`);
       continue;
     }
     if (cls === "mix-blend-overlay") {
-      rules.push(`.${cls} { mix-blend-mode: overlay; }`);
+      rules.push(`.${escapeSelector(cls)} { mix-blend-mode: overlay; }`);
       continue;
     }
     if (cls === "mix-blend-normal") {
-      rules.push(`.${cls} { mix-blend-mode: normal; }`);
+      rules.push(`.${escapeSelector(cls)} { mix-blend-mode: normal; }`);
       continue;
     }
     if (cls === "isolate") {
-      rules.push(`.${cls} { isolation: isolate; }`);
+      rules.push(`.${escapeSelector(cls)} { isolation: isolate; }`);
       continue;
     }
     if (cls === "isolation-auto") {
-      rules.push(`.${cls} { isolation: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { isolation: auto; }`);
       continue;
     }
     if (cls === "touch-auto") {
-      rules.push(`.${cls} { touch-action: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { touch-action: auto; }`);
       continue;
     }
     if (cls === "touch-none") {
-      rules.push(`.${cls} { touch-action: none; }`);
+      rules.push(`.${escapeSelector(cls)} { touch-action: none; }`);
       continue;
     }
     if (cls === "touch-pan-x") {
-      rules.push(`.${cls} { touch-action: pan-x; }`);
+      rules.push(`.${escapeSelector(cls)} { touch-action: pan-x; }`);
       continue;
     }
     if (cls === "touch-pan-y") {
-      rules.push(`.${cls} { touch-action: pan-y; }`);
+      rules.push(`.${escapeSelector(cls)} { touch-action: pan-y; }`);
       continue;
     }
     if (cls === "touch-manipulation") {
-      rules.push(`.${cls} { touch-action: manipulation; }`);
+      rules.push(`.${escapeSelector(cls)} { touch-action: manipulation; }`);
       continue;
     }
     if (cls === "select-none") {
-      rules.push(`.${cls} { user-select: none; }`);
+      rules.push(`.${escapeSelector(cls)} { user-select: none; }`);
       continue;
     }
     if (cls === "select-text") {
-      rules.push(`.${cls} { user-select: text; }`);
+      rules.push(`.${escapeSelector(cls)} { user-select: text; }`);
       continue;
     }
     if (cls === "select-all") {
-      rules.push(`.${cls} { user-select: all; }`);
+      rules.push(`.${escapeSelector(cls)} { user-select: all; }`);
       continue;
     }
     if (cls === "select-auto") {
-      rules.push(`.${cls} { user-select: auto; }`);
+      rules.push(`.${escapeSelector(cls)} { user-select: auto; }`);
       continue;
     }
     if (cls === "break-normal") {
-      rules.push(`.${cls} { overflow-wrap: normal; word-break: normal; }`);
+      rules.push(`.${escapeSelector(cls)} { overflow-wrap: normal; word-break: normal; }`);
       continue;
     }
     if (cls === "break-words") {
-      rules.push(`.${cls} { overflow-wrap: break-word; }`);
+      rules.push(`.${escapeSelector(cls)} { overflow-wrap: break-word; }`);
       continue;
     }
     if (cls === "break-all") {
-      rules.push(`.${cls} { word-break: break-all; }`);
+      rules.push(`.${escapeSelector(cls)} { word-break: break-all; }`);
       continue;
     }
     if (cls === "break-keep") {
-      rules.push(`.${cls} { word-break: keep-all; }`);
+      rules.push(`.${escapeSelector(cls)} { word-break: keep-all; }`);
       continue;
     }
   }

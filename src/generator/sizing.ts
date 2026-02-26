@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../types'
+import { escapeSelector } from './utils'
 
 function has(obj: Record<string, string>, key: string): boolean {
   return typeof obj[key] === 'string'
@@ -32,27 +33,27 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
   const wMatch = cls.match(/^w-(.+)$/)
   if (wMatch) {
     const key = wMatch[1]
-    if (key === 'auto') return `.${cls} { width: auto; }`
-    if (key === 'full') return `.${cls} { width: 100%; }`
-    if (key === 'screen') return `.${cls} { width: 100vw; }`
-    if (key === 'svw') return `.${cls} { width: 100svw; }`
-    if (key === 'min') return `.${cls} { width: min-content; }`
-    if (key === 'max') return `.${cls} { width: max-content; }`
-    if (key === 'fit') return `.${cls} { width: fit-content; }`
-    if (has(fractions, key)) return `.${cls} { width: ${fractions[key]}; }`
-    if (has(spacing, key)) return `.${cls} { width: ${spacing[key]}; }`
+    if (key === 'auto') return `.${escapeSelector(cls)} { width: auto; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { width: 100%; }`
+    if (key === 'screen') return `.${escapeSelector(cls)} { width: 100vw; }`
+    if (key === 'svw') return `.${escapeSelector(cls)} { width: 100svw; }`
+    if (key === 'min') return `.${escapeSelector(cls)} { width: min-content; }`
+    if (key === 'max') return `.${escapeSelector(cls)} { width: max-content; }`
+    if (key === 'fit') return `.${escapeSelector(cls)} { width: fit-content; }`
+    if (has(fractions, key)) return `.${escapeSelector(cls)} { width: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { width: ${spacing[key]}; }`
   }
 
   // Min width
   const minWMatch = cls.match(/^min-w-(.+)$/)
   if (minWMatch) {
     const key = minWMatch[1]
-    if (key === '0') return `.${cls} { min-width: 0px; }`
-    if (key === 'full') return `.${cls} { min-width: 100%; }`
-    if (key === 'min') return `.${cls} { min-width: min-content; }`
-    if (key === 'max') return `.${cls} { min-width: max-content; }`
-    if (key === 'fit') return `.${cls} { min-width: fit-content; }`
-    if (has(spacing, key)) return `.${cls} { min-width: ${spacing[key]}; }`
+    if (key === '0') return `.${escapeSelector(cls)} { min-width: 0px; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { min-width: 100%; }`
+    if (key === 'min') return `.${escapeSelector(cls)} { min-width: min-content; }`
+    if (key === 'max') return `.${escapeSelector(cls)} { min-width: max-content; }`
+    if (key === 'fit') return `.${escapeSelector(cls)} { min-width: fit-content; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { min-width: ${spacing[key]}; }`
   }
 
   // Max width
@@ -65,60 +66,60 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
   }
   const maxWMatch = cls.match(/^max-w-(.+)$/)
   if (maxWMatch && has(maxWMap, maxWMatch[1])) {
-    return `.${cls} { max-width: ${maxWMap[maxWMatch[1]]}; }`
+    return `.${escapeSelector(cls)} { max-width: ${maxWMap[maxWMatch[1]]}; }`
   }
 
   // Height
   const hMatch = cls.match(/^h-(.+)$/)
   if (hMatch) {
     const key = hMatch[1]
-    if (key === 'auto') return `.${cls} { height: auto; }`
-    if (key === 'full') return `.${cls} { height: 100%; }`
-    if (key === 'screen') return `.${cls} { height: 100vh; }`
-    if (key === 'svh') return `.${cls} { height: 100svh; }`
-    if (key === 'dvh') return `.${cls} { height: 100dvh; }`
-    if (key === 'min') return `.${cls} { height: min-content; }`
-    if (key === 'max') return `.${cls} { height: max-content; }`
-    if (key === 'fit') return `.${cls} { height: fit-content; }`
-    if (has(fractions, key)) return `.${cls} { height: ${fractions[key]}; }`
-    if (has(spacing, key)) return `.${cls} { height: ${spacing[key]}; }`
+    if (key === 'auto') return `.${escapeSelector(cls)} { height: auto; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { height: 100%; }`
+    if (key === 'screen') return `.${escapeSelector(cls)} { height: 100vh; }`
+    if (key === 'svh') return `.${escapeSelector(cls)} { height: 100svh; }`
+    if (key === 'dvh') return `.${escapeSelector(cls)} { height: 100dvh; }`
+    if (key === 'min') return `.${escapeSelector(cls)} { height: min-content; }`
+    if (key === 'max') return `.${escapeSelector(cls)} { height: max-content; }`
+    if (key === 'fit') return `.${escapeSelector(cls)} { height: fit-content; }`
+    if (has(fractions, key)) return `.${escapeSelector(cls)} { height: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { height: ${spacing[key]}; }`
   }
 
   // Min height
   const minHMatch = cls.match(/^min-h-(.+)$/)
   if (minHMatch) {
     const key = minHMatch[1]
-    if (key === '0') return `.${cls} { min-height: 0px; }`
-    if (key === 'full') return `.${cls} { min-height: 100%; }`
-    if (key === 'screen') return `.${cls} { min-height: 100vh; }`
-    if (key === 'svh') return `.${cls} { min-height: 100svh; }`
-    if (key === 'dvh') return `.${cls} { min-height: 100dvh; }`
-    if (key === 'fit') return `.${cls} { min-height: fit-content; }`
-    if (has(spacing, key)) return `.${cls} { min-height: ${spacing[key]}; }`
+    if (key === '0') return `.${escapeSelector(cls)} { min-height: 0px; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { min-height: 100%; }`
+    if (key === 'screen') return `.${escapeSelector(cls)} { min-height: 100vh; }`
+    if (key === 'svh') return `.${escapeSelector(cls)} { min-height: 100svh; }`
+    if (key === 'dvh') return `.${escapeSelector(cls)} { min-height: 100dvh; }`
+    if (key === 'fit') return `.${escapeSelector(cls)} { min-height: fit-content; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { min-height: ${spacing[key]}; }`
   }
 
   // Max height
   const maxHMatch = cls.match(/^max-h-(.+)$/)
   if (maxHMatch) {
     const key = maxHMatch[1]
-    if (key === 'none') return `.${cls} { max-height: none; }`
-    if (key === 'full') return `.${cls} { max-height: 100%; }`
-    if (key === 'screen') return `.${cls} { max-height: 100vh; }`
-    if (key === 'svh') return `.${cls} { max-height: 100svh; }`
-    if (key === 'dvh') return `.${cls} { max-height: 100dvh; }`
-    if (key === 'fit') return `.${cls} { max-height: fit-content; }`
-    if (has(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`
+    if (key === 'none') return `.${escapeSelector(cls)} { max-height: none; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { max-height: 100%; }`
+    if (key === 'screen') return `.${escapeSelector(cls)} { max-height: 100vh; }`
+    if (key === 'svh') return `.${escapeSelector(cls)} { max-height: 100svh; }`
+    if (key === 'dvh') return `.${escapeSelector(cls)} { max-height: 100dvh; }`
+    if (key === 'fit') return `.${escapeSelector(cls)} { max-height: fit-content; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { max-height: ${spacing[key]}; }`
   }
 
   // Flex basis
   const basisMatch = cls.match(/^basis-(.+)$/)
   if (basisMatch) {
     const key = basisMatch[1]
-    if (key === 'auto') return `.${cls} { flex-basis: auto; }`
-    if (key === 'full') return `.${cls} { flex-basis: 100%; }`
-    if (key === '0') return `.${cls} { flex-basis: 0px; }`
-    if (has(fractions, key)) return `.${cls} { flex-basis: ${fractions[key]}; }`
-    if (has(spacing, key)) return `.${cls} { flex-basis: ${spacing[key]}; }`
+    if (key === 'auto') return `.${escapeSelector(cls)} { flex-basis: auto; }`
+    if (key === 'full') return `.${escapeSelector(cls)} { flex-basis: 100%; }`
+    if (key === '0') return `.${escapeSelector(cls)} { flex-basis: 0px; }`
+    if (has(fractions, key)) return `.${escapeSelector(cls)} { flex-basis: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${escapeSelector(cls)} { flex-basis: ${spacing[key]}; }`
   }
 
   return null

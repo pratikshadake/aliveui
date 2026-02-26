@@ -25,13 +25,13 @@ function matchEffects(
   // Opacity
   const opacityMatch = cls.match(/^opacity-(.+)$/)
   if (opacityMatch && has(opacity, opacityMatch[1])) {
-    return `.${cls} {\n  opacity: ${opacity[opacityMatch[1]]};\n  transition-property: opacity;\n  transition-duration: var(--alive-duration, 0ms);\n  transition-timing-function: var(--alive-ease, linear);\n}`
+    return `.${escapeSelector(cls)} {\n  opacity: ${opacity[opacityMatch[1]]};\n  transition-property: opacity;\n  transition-duration: var(--alive-duration, 0ms);\n  transition-timing-function: var(--alive-ease, linear);\n}`
   }
 
   // Z-index
   const zMatch = cls.match(/^z-(.+)$/)
   if (zMatch && has(zIndex, zMatch[1])) {
-    return `.${cls} { z-index: ${zIndex[zMatch[1]]}; }`
+    return `.${escapeSelector(cls)} { z-index: ${zIndex[zMatch[1]]}; }`
   }
 
   // Box shadow (non-depth)
@@ -39,10 +39,10 @@ function matchEffects(
   if (shadowMatch) {
     const key = shadowMatch[1] ?? 'DEFAULT'
     if (has(boxShadow, key)) {
-      return `.${cls} { box-shadow: ${boxShadow[key]}; }`
+      return `.${escapeSelector(cls)} { box-shadow: ${boxShadow[key]}; }`
     }
     if (!shadowMatch[1] && has(boxShadow, 'DEFAULT')) {
-      return `.${cls} { box-shadow: ${boxShadow['DEFAULT']}; }`
+      return `.${escapeSelector(cls)} { box-shadow: ${boxShadow['DEFAULT']}; }`
     }
   }
 
@@ -50,8 +50,8 @@ function matchEffects(
   const roundedMatch = cls.match(/^rounded(?:-(.+))?$/)
   if (roundedMatch) {
     const key = roundedMatch[1] ?? 'DEFAULT'
-    if (has(borderRadius, key)) return `.${cls} { border-radius: ${borderRadius[key]}; }`
-    if (!roundedMatch[1] && has(borderRadius, 'DEFAULT')) return `.${cls} { border-radius: ${borderRadius['DEFAULT']}; }`
+    if (has(borderRadius, key)) return `.${escapeSelector(cls)} { border-radius: ${borderRadius[key]}; }`
+    if (!roundedMatch[1] && has(borderRadius, 'DEFAULT')) return `.${escapeSelector(cls)} { border-radius: ${borderRadius['DEFAULT']}; }`
   }
 
   // Directional border radius
@@ -59,80 +59,80 @@ function matchEffects(
   if (roundedTMatch) {
     const rkey = roundedTMatch[1] ?? 'DEFAULT'
     const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
-    if (val) return `.${cls} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`
+    if (val) return `.${escapeSelector(cls)} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`
   }
 
   const roundedBMatch = cls.match(/^rounded-b(?:-(.+))?$/)
   if (roundedBMatch) {
     const rkey = roundedBMatch[1] ?? 'DEFAULT'
     const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
-    if (val) return `.${cls} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`
+    if (val) return `.${escapeSelector(cls)} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`
   }
 
   const roundedLMatch = cls.match(/^rounded-l(?:-(.+))?$/)
   if (roundedLMatch) {
     const rkey = roundedLMatch[1] ?? 'DEFAULT'
     const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
-    if (val) return `.${cls} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`
+    if (val) return `.${escapeSelector(cls)} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`
   }
 
   const roundedRMatch = cls.match(/^rounded-r(?:-(.+))?$/)
   if (roundedRMatch) {
     const rkey = roundedRMatch[1] ?? 'DEFAULT'
     const val = has(borderRadius, rkey) ? borderRadius[rkey] : (has(borderRadius, 'DEFAULT') ? borderRadius['DEFAULT'] : null)
-    if (val) return `.${cls} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`
+    if (val) return `.${escapeSelector(cls)} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`
   }
 
   // Border width
-  if (cls === 'border') return `.${cls} { border-width: 1px; border-style: solid; }`
-  if (cls === 'border-0') return `.${cls} { border-width: 0px; }`
-  if (cls === 'border-2') return `.${cls} { border-width: 2px; border-style: solid; }`
-  if (cls === 'border-4') return `.${cls} { border-width: 4px; border-style: solid; }`
-  if (cls === 'border-8') return `.${cls} { border-width: 8px; border-style: solid; }`
-  if (cls === 'border-t') return `.${cls} { border-top-width: 1px; border-top-style: solid; }`
-  if (cls === 'border-r') return `.${cls} { border-right-width: 1px; border-right-style: solid; }`
-  if (cls === 'border-b') return `.${cls} { border-bottom-width: 1px; border-bottom-style: solid; }`
-  if (cls === 'border-l') return `.${cls} { border-left-width: 1px; border-left-style: solid; }`
-  if (cls === 'border-t-0') return `.${cls} { border-top-width: 0px; }`
-  if (cls === 'border-r-0') return `.${cls} { border-right-width: 0px; }`
-  if (cls === 'border-b-0') return `.${cls} { border-bottom-width: 0px; }`
-  if (cls === 'border-l-0') return `.${cls} { border-left-width: 0px; }`
+  if (cls === 'border') return `.${escapeSelector(cls)} { border-width: 1px; border-style: solid; }`
+  if (cls === 'border-0') return `.${escapeSelector(cls)} { border-width: 0px; }`
+  if (cls === 'border-2') return `.${escapeSelector(cls)} { border-width: 2px; border-style: solid; }`
+  if (cls === 'border-4') return `.${escapeSelector(cls)} { border-width: 4px; border-style: solid; }`
+  if (cls === 'border-8') return `.${escapeSelector(cls)} { border-width: 8px; border-style: solid; }`
+  if (cls === 'border-t') return `.${escapeSelector(cls)} { border-top-width: 1px; border-top-style: solid; }`
+  if (cls === 'border-r') return `.${escapeSelector(cls)} { border-right-width: 1px; border-right-style: solid; }`
+  if (cls === 'border-b') return `.${escapeSelector(cls)} { border-bottom-width: 1px; border-bottom-style: solid; }`
+  if (cls === 'border-l') return `.${escapeSelector(cls)} { border-left-width: 1px; border-left-style: solid; }`
+  if (cls === 'border-t-0') return `.${escapeSelector(cls)} { border-top-width: 0px; }`
+  if (cls === 'border-r-0') return `.${escapeSelector(cls)} { border-right-width: 0px; }`
+  if (cls === 'border-b-0') return `.${escapeSelector(cls)} { border-bottom-width: 0px; }`
+  if (cls === 'border-l-0') return `.${escapeSelector(cls)} { border-left-width: 0px; }`
 
   // Border style
-  if (cls === 'border-solid') return `.${cls} { border-style: solid; }`
-  if (cls === 'border-dashed') return `.${cls} { border-style: dashed; }`
-  if (cls === 'border-dotted') return `.${cls} { border-style: dotted; }`
-  if (cls === 'border-double') return `.${cls} { border-style: double; }`
-  if (cls === 'border-hidden') return `.${cls} { border-style: hidden; }`
-  if (cls === 'border-none') return `.${cls} { border-style: none; }`
+  if (cls === 'border-solid') return `.${escapeSelector(cls)} { border-style: solid; }`
+  if (cls === 'border-dashed') return `.${escapeSelector(cls)} { border-style: dashed; }`
+  if (cls === 'border-dotted') return `.${escapeSelector(cls)} { border-style: dotted; }`
+  if (cls === 'border-double') return `.${escapeSelector(cls)} { border-style: double; }`
+  if (cls === 'border-hidden') return `.${escapeSelector(cls)} { border-style: hidden; }`
+  if (cls === 'border-none') return `.${escapeSelector(cls)} { border-style: none; }`
 
   // Outline
-  if (cls === 'outline-none') return `.${cls} { outline: 2px solid transparent; outline-offset: 2px; }`
-  if (cls === 'outline') return `.${cls} { outline-style: solid; }`
-  if (cls === 'outline-dashed') return `.${cls} { outline-style: dashed; }`
-  if (cls === 'outline-dotted') return `.${cls} { outline-style: dotted; }`
-  if (cls === 'outline-double') return `.${cls} { outline-style: double; }`
+  if (cls === 'outline-none') return `.${escapeSelector(cls)} { outline: 2px solid transparent; outline-offset: 2px; }`
+  if (cls === 'outline') return `.${escapeSelector(cls)} { outline-style: solid; }`
+  if (cls === 'outline-dashed') return `.${escapeSelector(cls)} { outline-style: dashed; }`
+  if (cls === 'outline-dotted') return `.${escapeSelector(cls)} { outline-style: dotted; }`
+  if (cls === 'outline-double') return `.${escapeSelector(cls)} { outline-style: double; }`
 
   const outlineWidthMatch = cls.match(/^outline-(\d+)$/)
-  if (outlineWidthMatch) return `.${cls} { outline-width: ${outlineWidthMatch[1]}px; }`
+  if (outlineWidthMatch) return `.${escapeSelector(cls)} { outline-width: ${outlineWidthMatch[1]}px; }`
 
   const outlineOffsetMatch = cls.match(/^outline-offset-(\d+)$/)
-  if (outlineOffsetMatch) return `.${cls} { outline-offset: ${outlineOffsetMatch[1]}px; }`
+  if (outlineOffsetMatch) return `.${escapeSelector(cls)} { outline-offset: ${outlineOffsetMatch[1]}px; }`
 
   // Ring
   const ringMatch = cls.match(/^ring(?:-(\d+))?$/)
   if (ringMatch) {
     const width = ringMatch[1] ?? '3'
-    return `.${cls} { box-shadow: 0 0 0 ${width}px var(--alive-ring-color, rgba(59, 130, 246, 0.5)); }`
+    return `.${escapeSelector(cls)} { box-shadow: 0 0 0 ${width}px var(--alive-ring-color, rgba(59, 130, 246, 0.5)); }`
   }
-  if (cls === 'ring-inset') return `.${cls} { --alive-ring-inset: inset; }`
+  if (cls === 'ring-inset') return `.${escapeSelector(cls)} { --alive-ring-inset: inset; }`
 
   const ringOffsetMatch = cls.match(/^ring-offset-(\d+)$/)
-  if (ringOffsetMatch) return `.${cls} { --alive-ring-offset: ${ringOffsetMatch[1]}px; }`
+  if (ringOffsetMatch) return `.${escapeSelector(cls)} { --alive-ring-offset: ${ringOffsetMatch[1]}px; }`
 
   // Transform utilities
-  if (cls === 'transform') return `.${cls} { transform: translateX(var(--alive-tx,0)) translateY(var(--alive-ty,0)) rotate(var(--alive-rotate,0)) scaleX(var(--alive-sx,1)) scaleY(var(--alive-sy,1)) skewX(var(--alive-skew-x,0)) skewY(var(--alive-skew-y,0)); }`
-  if (cls === 'transform-none') return `.${cls} { transform: none; }`
+  if (cls === 'transform') return `.${escapeSelector(cls)} { transform: translateX(var(--alive-tx,0)) translateY(var(--alive-ty,0)) rotate(var(--alive-rotate,0)) scaleX(var(--alive-sx,1)) scaleY(var(--alive-sy,1)) skewX(var(--alive-skew-x,0)) skewY(var(--alive-skew-y,0)); }`
+  if (cls === 'transform-none') return `.${escapeSelector(cls)} { transform: none; }`
 
   // Scale
   const scaleMap: Record<string, string> = {
@@ -141,17 +141,17 @@ function matchEffects(
   }
   const scaleMatch = cls.match(/^scale-(\d+)$/)
   if (scaleMatch && has(scaleMap, scaleMatch[1])) {
-    return `.${cls} { transform: scale(${scaleMap[scaleMatch[1]]}); }`
+    return `.${escapeSelector(cls)} { transform: scale(${scaleMap[scaleMatch[1]]}); }`
   }
 
   const scaleXMatch = cls.match(/^scale-x-(\d+)$/)
   if (scaleXMatch && has(scaleMap, scaleXMatch[1])) {
-    return `.${cls} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`
+    return `.${escapeSelector(cls)} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`
   }
 
   const scaleYMatch = cls.match(/^scale-y-(\d+)$/)
   if (scaleYMatch && has(scaleMap, scaleYMatch[1])) {
-    return `.${cls} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`
+    return `.${escapeSelector(cls)} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`
   }
 
   // Rotate
@@ -181,12 +181,12 @@ function matchEffects(
   }
 
   // Transition (explicit overrides for elements outside depth context)
-  if (cls === 'transition-none') return `.${cls} { transition: none; }`
-  if (cls === 'transition-all') return `.${cls} { transition: all var(--alive-duration-normal) var(--alive-ease-standard); }`
-  if (cls === 'transition-colors') return `.${cls} { transition: color, background-color, border-color, text-decoration-color, fill, stroke; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
-  if (cls === 'transition-opacity') return `.${cls} { transition: opacity; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
-  if (cls === 'transition-shadow') return `.${cls} { transition: box-shadow; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
-  if (cls === 'transition-transform') return `.${cls} { transition: transform; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
+  if (cls === 'transition-none') return `.${escapeSelector(cls)} { transition: none; }`
+  if (cls === 'transition-all') return `.${escapeSelector(cls)} { transition: all var(--alive-duration-normal) var(--alive-ease-standard); }`
+  if (cls === 'transition-colors') return `.${escapeSelector(cls)} { transition: color, background-color, border-color, text-decoration-color, fill, stroke; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
+  if (cls === 'transition-opacity') return `.${escapeSelector(cls)} { transition: opacity; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
+  if (cls === 'transition-shadow') return `.${escapeSelector(cls)} { transition: box-shadow; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
+  if (cls === 'transition-transform') return `.${escapeSelector(cls)} { transition: transform; transition-duration: var(--alive-duration-normal); transition-timing-function: var(--alive-ease-standard); }`
 
   // Backdrop filter
   const blurMatch = cls.match(/^blur(?:-(.+))?$/)
@@ -196,7 +196,7 @@ function matchEffects(
       xl: '24px', '2xl': '40px', '3xl': '64px',
     }
     const key = blurMatch[1] ?? 'DEFAULT'
-    if (has(blurMap, key)) return `.${cls} { filter: blur(${blurMap[key]}); }`
+    if (has(blurMap, key)) return `.${escapeSelector(cls)} { filter: blur(${blurMap[key]}); }`
   }
 
   const backdropBlurMatch = cls.match(/^backdrop-blur(?:-(.+))?$/)
@@ -206,7 +206,7 @@ function matchEffects(
       xl: '24px', '2xl': '40px', '3xl': '64px',
     }
     const key = backdropBlurMatch[1] ?? 'DEFAULT'
-    if (has(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`
+    if (has(blurMap, key)) return `.${escapeSelector(cls)} { backdrop-filter: blur(${blurMap[key]}); }`
   }
 
   // ── Arbitrary value utilities ─────────────────────────────────────

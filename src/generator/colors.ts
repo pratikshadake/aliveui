@@ -1,5 +1,5 @@
 import type { ResolvedConfig } from '../types'
-import { rule, resolveColor, escapeSelector } from './utils'
+import { rule, resolveColor, escapeSelector, applyOpacity } from './utils'
 
 // Properties that benefit from alive motion transitions
 const TRANSITIONED = `
@@ -32,7 +32,7 @@ function matchColor(
   if (bgMatch) {
     const value = resolveColor(colors, bgMatch[1], bgMatch[2])
     if (value) {
-      return `.${cls} {\n  background-color: ${value};${transitioned('background-color')}\n}`
+      return `.${escapeSelector(cls)} {\n  background-color: ${value};${transitioned('background-color')}\n}`
     }
   }
 
@@ -41,7 +41,7 @@ function matchColor(
   if (textColorMatch) {
     const value = resolveColor(colors, textColorMatch[1], textColorMatch[2])
     if (value) {
-      return `.${cls} {\n  color: ${value};${transitioned('color')}\n}`
+      return `.${escapeSelector(cls)} {\n  color: ${value};${transitioned('color')}\n}`
     }
   }
 
@@ -50,7 +50,7 @@ function matchColor(
   if (borderColorMatch) {
     const value = resolveColor(colors, borderColorMatch[1], borderColorMatch[2])
     if (value) {
-      return `.${cls} {\n  border-color: ${value};${transitioned('border-color')}\n}`
+      return `.${escapeSelector(cls)} {\n  border-color: ${value};${transitioned('border-color')}\n}`
     }
   }
 
@@ -59,7 +59,7 @@ function matchColor(
   if (ringColorMatch) {
     const value = resolveColor(colors, ringColorMatch[1], ringColorMatch[2])
     if (value) {
-      return `.${cls} {\n  --alive-ring-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  --alive-ring-color: ${value};\n}`
     }
   }
 
@@ -68,7 +68,7 @@ function matchColor(
   if (outlineColorMatch) {
     const value = resolveColor(colors, outlineColorMatch[1], outlineColorMatch[2])
     if (value) {
-      return `.${cls} {\n  outline-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  outline-color: ${value};\n}`
     }
   }
 
@@ -77,7 +77,7 @@ function matchColor(
   if (fillMatch) {
     const value = resolveColor(colors, fillMatch[1], fillMatch[2])
     if (value) {
-      return `.${cls} {\n  fill: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  fill: ${value};\n}`
     }
   }
 
@@ -86,7 +86,7 @@ function matchColor(
   if (strokeMatch) {
     const value = resolveColor(colors, strokeMatch[1], strokeMatch[2])
     if (value) {
-      return `.${cls} {\n  stroke: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  stroke: ${value};\n}`
     }
   }
 
@@ -95,7 +95,7 @@ function matchColor(
   if (decorationMatch) {
     const value = resolveColor(colors, decorationMatch[1], decorationMatch[2])
     if (value) {
-      return `.${cls} {\n  text-decoration-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  text-decoration-color: ${value};\n}`
     }
   }
 
@@ -104,7 +104,7 @@ function matchColor(
   if (caretMatch) {
     const value = resolveColor(colors, caretMatch[1], caretMatch[2])
     if (value) {
-      return `.${cls} {\n  caret-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  caret-color: ${value};\n}`
     }
   }
 
@@ -113,7 +113,7 @@ function matchColor(
   if (accentMatch) {
     const value = resolveColor(colors, accentMatch[1], accentMatch[2])
     if (value) {
-      return `.${cls} {\n  accent-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  accent-color: ${value};\n}`
     }
   }
 
@@ -122,44 +122,77 @@ function matchColor(
   if (shadowColorMatch) {
     const value = resolveColor(colors, shadowColorMatch[1], shadowColorMatch[2])
     if (value) {
-      return `.${cls} {\n  --alive-shadow-color: ${value};\n}`
+      return `.${escapeSelector(cls)} {\n  --alive-shadow-color: ${value};\n}`
     }
   }
 
-  // ── Arbitrary color values ────────────────────────────────────────
+  // ── Arbitrary color values (with optional /opacity modifier) ─────
 
-  const arbBgMatch = cls.match(/^bg-\[(.+)\]$/)
+  // bg-[value] or bg-[value]/opacity
+  const arbBgMatch = cls.match(/^bg-\[(.+)\](?:\/(\d+))?$/)
   if (arbBgMatch) {
-    const val = arbBgMatch[1]
+    const [, val, opStr] = arbBgMatch
     const escaped = escapeSelector(cls)
-    // Support both colors and url() / gradient values
     if (val.startsWith('url(') || val.startsWith('linear-gradient') || val.startsWith('radial-gradient')) {
       return `.${escaped} {\n  background-image: ${val};${transitioned('background-image')}\n}`
     }
-    return `.${escaped} {\n  background-color: ${val};${transitioned('background-color')}\n}`
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+    return `.${escaped} {\n  background-color: ${colorVal};${transitioned('background-color')}\n}`
   }
 
-  const arbTextMatch = cls.match(/^text-\[(.+)\]$/)
+  // text-[value] or text-[value]/opacity
+  // Infer font-size vs color from the value type
+  const arbTextMatch = cls.match(/^text-\[(.+)\](?:\/(\d+))?$/)
   if (arbTextMatch) {
-    return `.${escapeSelector(cls)} {\n  color: ${arbTextMatch[1]};${transitioned('color')}\n}`
+    const [, val, opStr] = arbTextMatch
+    const isSizeValue =
+      val.endsWith('px') || val.endsWith('em') || val.endsWith('rem') ||
+      val.endsWith('%') || val.endsWith('vw') || val.endsWith('vh') ||
+      val.endsWith('ch') || val.endsWith('ex') || val.endsWith('dvh') ||
+      /^[\d.]/.test(val) || /^(calc|clamp|min|max)\(/.test(val)
+    if (isSizeValue) {
+      return `.${escapeSelector(cls)} {\n  font-size: ${val};\n}`
+    }
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+    return `.${escapeSelector(cls)} {\n  color: ${colorVal};${transitioned('color')}\n}`
   }
 
-  const arbBorderColorMatch = cls.match(/^border-\[#[0-9a-fA-F]|^border-\[rgb|^border-\[hsl|^border-\[oklch/)
+  // border-[color] or border-[color]/opacity
+  const arbBorderColorMatch = cls.match(/^border-\[(.+)\](?:\/(\d+))?$/)
   if (arbBorderColorMatch) {
-    const m = cls.match(/^border-\[(.+)\]$/)
-    if (m) {
-      return `.${escapeSelector(cls)} {\n  border-color: ${m[1]};${transitioned('border-color')}\n}`
+    const [, val, opStr] = arbBorderColorMatch
+    // Only treat as border-color if the value looks like a color (not a width like 3px)
+    const looksLikeColor = val.startsWith('#') || val.startsWith('rgb') ||
+      val.startsWith('hsl') || val.startsWith('oklch') || val.startsWith('var(') ||
+      val === 'transparent' || val === 'currentColor'
+    if (looksLikeColor) {
+      const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+      return `.${escapeSelector(cls)} {\n  border-color: ${colorVal};${transitioned('border-color')}\n}`
     }
   }
 
-  const arbFillMatch = cls.match(/^fill-\[(.+)\]$/)
-  if (arbFillMatch) {
-    return `.${escapeSelector(cls)} {\n  fill: ${arbFillMatch[1]};\n}`
+  // ring-[color] or ring-[color]/opacity
+  const arbRingColorMatch = cls.match(/^ring-\[(.+)\](?:\/(\d+))?$/)
+  if (arbRingColorMatch) {
+    const [, val, opStr] = arbRingColorMatch
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+    return `.${escapeSelector(cls)} {\n  --alive-ring-color: ${colorVal};\n}`
   }
 
-  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\]$/)
+  // fill-[value] or fill-[value]/opacity
+  const arbFillMatch = cls.match(/^fill-\[(.+)\](?:\/(\d+))?$/)
+  if (arbFillMatch) {
+    const [, val, opStr] = arbFillMatch
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+    return `.${escapeSelector(cls)} {\n  fill: ${colorVal};\n}`
+  }
+
+  // stroke-[value] or stroke-[value]/opacity
+  const arbStrokeMatch = cls.match(/^stroke-\[(.+)\](?:\/(\d+))?$/)
   if (arbStrokeMatch) {
-    return `.${escapeSelector(cls)} {\n  stroke: ${arbStrokeMatch[1]};\n}`
+    const [, val, opStr] = arbStrokeMatch
+    const colorVal = opStr ? applyOpacity(val, parseInt(opStr)) : val
+    return `.${escapeSelector(cls)} {\n  stroke: ${colorVal};\n}`
   }
 
   return null
