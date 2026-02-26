@@ -2708,9 +2708,23 @@ function matchTypography(cls, fontSize, fontWeight, lineHeight) {
 }
 
 // src/generator/layout.ts
-function generateLayout(classes, _config) {
+function has2(obj, key) {
+  return typeof obj[key] === "string";
+}
+function generateLayout(classes, config) {
+  const { spacing } = config.theme;
   const rules = [];
   for (const cls of classes) {
+    const spaceYMatch = cls.match(/^space-y-(.+)$/);
+    if (spaceYMatch && has2(spacing, spaceYMatch[1])) {
+      rules.push(`.${escapeSelector(cls)} > * + * { margin-top: ${spacing[spaceYMatch[1]]}; }`);
+      continue;
+    }
+    const spaceXMatch = cls.match(/^space-x-(.+)$/);
+    if (spaceXMatch && has2(spacing, spaceXMatch[1])) {
+      rules.push(`.${escapeSelector(cls)} > * + * { margin-left: ${spacing[spaceXMatch[1]]}; }`);
+      continue;
+    }
     const generated = matchLayout(cls);
     if (generated) rules.push(generated);
   }
@@ -2753,6 +2767,10 @@ function matchLayout(cls) {
   if (cls === "flex-grow-0") return `.${cls} { flex-grow: 0; }`;
   if (cls === "flex-shrink") return `.${cls} { flex-shrink: 1; }`;
   if (cls === "flex-shrink-0") return `.${cls} { flex-shrink: 0; }`;
+  if (cls === "grow") return `.${cls} { flex-grow: 1; }`;
+  if (cls === "grow-0") return `.${cls} { flex-grow: 0; }`;
+  if (cls === "shrink") return `.${cls} { flex-shrink: 1; }`;
+  if (cls === "shrink-0") return `.${cls} { flex-shrink: 0; }`;
   if (cls === "items-start") return `.${cls} { align-items: flex-start; }`;
   if (cls === "items-end") return `.${cls} { align-items: flex-end; }`;
   if (cls === "items-center") return `.${cls} { align-items: center; }`;
@@ -2929,7 +2947,7 @@ function matchLayout(cls) {
 }
 
 // src/generator/sizing.ts
-function has2(obj, key) {
+function has3(obj, key) {
   return typeof obj[key] === "string";
 }
 function generateSizing(classes, config) {
@@ -2980,8 +2998,8 @@ function matchSizing(cls, spacing) {
     if (key === "min") return `.${cls} { width: min-content; }`;
     if (key === "max") return `.${cls} { width: max-content; }`;
     if (key === "fit") return `.${cls} { width: fit-content; }`;
-    if (has2(fractions, key)) return `.${cls} { width: ${fractions[key]}; }`;
-    if (has2(spacing, key)) return `.${cls} { width: ${spacing[key]}; }`;
+    if (has3(fractions, key)) return `.${cls} { width: ${fractions[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { width: ${spacing[key]}; }`;
   }
   const minWMatch = cls.match(/^min-w-(.+)$/);
   if (minWMatch) {
@@ -2991,7 +3009,7 @@ function matchSizing(cls, spacing) {
     if (key === "min") return `.${cls} { min-width: min-content; }`;
     if (key === "max") return `.${cls} { min-width: max-content; }`;
     if (key === "fit") return `.${cls} { min-width: fit-content; }`;
-    if (has2(spacing, key)) return `.${cls} { min-width: ${spacing[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { min-width: ${spacing[key]}; }`;
   }
   const maxWMap = {
     none: "none",
@@ -3018,7 +3036,7 @@ function matchSizing(cls, spacing) {
     "screen-2xl": "1536px"
   };
   const maxWMatch = cls.match(/^max-w-(.+)$/);
-  if (maxWMatch && has2(maxWMap, maxWMatch[1])) {
+  if (maxWMatch && has3(maxWMap, maxWMatch[1])) {
     return `.${cls} { max-width: ${maxWMap[maxWMatch[1]]}; }`;
   }
   const hMatch = cls.match(/^h-(.+)$/);
@@ -3032,8 +3050,8 @@ function matchSizing(cls, spacing) {
     if (key === "min") return `.${cls} { height: min-content; }`;
     if (key === "max") return `.${cls} { height: max-content; }`;
     if (key === "fit") return `.${cls} { height: fit-content; }`;
-    if (has2(fractions, key)) return `.${cls} { height: ${fractions[key]}; }`;
-    if (has2(spacing, key)) return `.${cls} { height: ${spacing[key]}; }`;
+    if (has3(fractions, key)) return `.${cls} { height: ${fractions[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { height: ${spacing[key]}; }`;
   }
   const minHMatch = cls.match(/^min-h-(.+)$/);
   if (minHMatch) {
@@ -3044,7 +3062,7 @@ function matchSizing(cls, spacing) {
     if (key === "svh") return `.${cls} { min-height: 100svh; }`;
     if (key === "dvh") return `.${cls} { min-height: 100dvh; }`;
     if (key === "fit") return `.${cls} { min-height: fit-content; }`;
-    if (has2(spacing, key)) return `.${cls} { min-height: ${spacing[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { min-height: ${spacing[key]}; }`;
   }
   const maxHMatch = cls.match(/^max-h-(.+)$/);
   if (maxHMatch) {
@@ -3055,13 +3073,22 @@ function matchSizing(cls, spacing) {
     if (key === "svh") return `.${cls} { max-height: 100svh; }`;
     if (key === "dvh") return `.${cls} { max-height: 100dvh; }`;
     if (key === "fit") return `.${cls} { max-height: fit-content; }`;
-    if (has2(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`;
+  }
+  const basisMatch = cls.match(/^basis-(.+)$/);
+  if (basisMatch) {
+    const key = basisMatch[1];
+    if (key === "auto") return `.${cls} { flex-basis: auto; }`;
+    if (key === "full") return `.${cls} { flex-basis: 100%; }`;
+    if (key === "0") return `.${cls} { flex-basis: 0px; }`;
+    if (has3(fractions, key)) return `.${cls} { flex-basis: ${fractions[key]}; }`;
+    if (has3(spacing, key)) return `.${cls} { flex-basis: ${spacing[key]}; }`;
   }
   return null;
 }
 
 // src/generator/effects.ts
-function has3(obj, key) {
+function has4(obj, key) {
   return typeof obj[key] === "string";
 }
 function generateEffects(classes, config) {
@@ -3075,7 +3102,7 @@ function generateEffects(classes, config) {
 }
 function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
   const opacityMatch = cls.match(/^opacity-(.+)$/);
-  if (opacityMatch && has3(opacity, opacityMatch[1])) {
+  if (opacityMatch && has4(opacity, opacityMatch[1])) {
     return `.${cls} {
   opacity: ${opacity[opacityMatch[1]]};
   transition-property: opacity;
@@ -3084,47 +3111,47 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
 }`;
   }
   const zMatch = cls.match(/^z-(.+)$/);
-  if (zMatch && has3(zIndex, zMatch[1])) {
+  if (zMatch && has4(zIndex, zMatch[1])) {
     return `.${cls} { z-index: ${zIndex[zMatch[1]]}; }`;
   }
   const shadowMatch = cls.match(/^shadow(?:-(.+))?$/);
   if (shadowMatch) {
     const key = shadowMatch[1] ?? "DEFAULT";
-    if (has3(boxShadow, key)) {
+    if (has4(boxShadow, key)) {
       return `.${cls} { box-shadow: ${boxShadow[key]}; }`;
     }
-    if (!shadowMatch[1] && has3(boxShadow, "DEFAULT")) {
+    if (!shadowMatch[1] && has4(boxShadow, "DEFAULT")) {
       return `.${cls} { box-shadow: ${boxShadow["DEFAULT"]}; }`;
     }
   }
   const roundedMatch = cls.match(/^rounded(?:-(.+))?$/);
   if (roundedMatch) {
     const key = roundedMatch[1] ?? "DEFAULT";
-    if (has3(borderRadius, key)) return `.${cls} { border-radius: ${borderRadius[key]}; }`;
-    if (!roundedMatch[1] && has3(borderRadius, "DEFAULT")) return `.${cls} { border-radius: ${borderRadius["DEFAULT"]}; }`;
+    if (has4(borderRadius, key)) return `.${cls} { border-radius: ${borderRadius[key]}; }`;
+    if (!roundedMatch[1] && has4(borderRadius, "DEFAULT")) return `.${cls} { border-radius: ${borderRadius["DEFAULT"]}; }`;
   }
   const roundedTMatch = cls.match(/^rounded-t(?:-(.+))?$/);
   if (roundedTMatch) {
     const rkey = roundedTMatch[1] ?? "DEFAULT";
-    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
     if (val) return `.${cls} { border-top-left-radius: ${val}; border-top-right-radius: ${val}; }`;
   }
   const roundedBMatch = cls.match(/^rounded-b(?:-(.+))?$/);
   if (roundedBMatch) {
     const rkey = roundedBMatch[1] ?? "DEFAULT";
-    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
     if (val) return `.${cls} { border-bottom-left-radius: ${val}; border-bottom-right-radius: ${val}; }`;
   }
   const roundedLMatch = cls.match(/^rounded-l(?:-(.+))?$/);
   if (roundedLMatch) {
     const rkey = roundedLMatch[1] ?? "DEFAULT";
-    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
     if (val) return `.${cls} { border-top-left-radius: ${val}; border-bottom-left-radius: ${val}; }`;
   }
   const roundedRMatch = cls.match(/^rounded-r(?:-(.+))?$/);
   if (roundedRMatch) {
     const rkey = roundedRMatch[1] ?? "DEFAULT";
-    const val = has3(borderRadius, rkey) ? borderRadius[rkey] : has3(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
+    const val = has4(borderRadius, rkey) ? borderRadius[rkey] : has4(borderRadius, "DEFAULT") ? borderRadius["DEFAULT"] : null;
     if (val) return `.${cls} { border-top-right-radius: ${val}; border-bottom-right-radius: ${val}; }`;
   }
   if (cls === "border") return `.${cls} { border-width: 1px; border-style: solid; }`;
@@ -3178,15 +3205,15 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
     "150": "1.5"
   };
   const scaleMatch = cls.match(/^scale-(\d+)$/);
-  if (scaleMatch && has3(scaleMap, scaleMatch[1])) {
+  if (scaleMatch && has4(scaleMap, scaleMatch[1])) {
     return `.${cls} { transform: scale(${scaleMap[scaleMatch[1]]}); }`;
   }
   const scaleXMatch = cls.match(/^scale-x-(\d+)$/);
-  if (scaleXMatch && has3(scaleMap, scaleXMatch[1])) {
+  if (scaleXMatch && has4(scaleMap, scaleXMatch[1])) {
     return `.${cls} { transform: scaleX(${scaleMap[scaleXMatch[1]]}); }`;
   }
   const scaleYMatch = cls.match(/^scale-y-(\d+)$/);
-  if (scaleYMatch && has3(scaleMap, scaleYMatch[1])) {
+  if (scaleYMatch && has4(scaleMap, scaleYMatch[1])) {
     return `.${cls} { transform: scaleY(${scaleMap[scaleYMatch[1]]}); }`;
   }
   const rotateMatch = cls.match(/^-?rotate-(\d+)$/);
@@ -3229,7 +3256,7 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
       "3xl": "64px"
     };
     const key = blurMatch[1] ?? "DEFAULT";
-    if (has3(blurMap, key)) return `.${cls} { filter: blur(${blurMap[key]}); }`;
+    if (has4(blurMap, key)) return `.${cls} { filter: blur(${blurMap[key]}); }`;
   }
   const backdropBlurMatch = cls.match(/^backdrop-blur(?:-(.+))?$/);
   if (backdropBlurMatch) {
@@ -3244,7 +3271,7 @@ function matchEffects(cls, opacity, zIndex, boxShadow, borderRadius) {
       "3xl": "64px"
     };
     const key = backdropBlurMatch[1] ?? "DEFAULT";
-    if (has3(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`;
+    if (has4(blurMap, key)) return `.${cls} { backdrop-filter: blur(${blurMap[key]}); }`;
   }
   const arbOpacityMatch = cls.match(/^opacity-\[(.+)\]$/);
   if (arbOpacityMatch) {

@@ -1,8 +1,26 @@
 import type { ResolvedConfig } from '../types'
+import { escapeSelector } from './utils'
 
-export function generateLayout(classes: Set<string>, _config: ResolvedConfig): string[] {
+function has(obj: Record<string, string>, key: string): boolean {
+  return typeof obj[key] === 'string'
+}
+
+export function generateLayout(classes: Set<string>, config: ResolvedConfig): string[] {
+  const { spacing } = config.theme
   const rules: string[] = []
   for (const cls of classes) {
+    // space-y / space-x need child selectors — handled before matchLayout
+    const spaceYMatch = cls.match(/^space-y-(.+)$/)
+    if (spaceYMatch && has(spacing, spaceYMatch[1])) {
+      rules.push(`.${escapeSelector(cls)} > * + * { margin-top: ${spacing[spaceYMatch[1]]}; }`)
+      continue
+    }
+    const spaceXMatch = cls.match(/^space-x-(.+)$/)
+    if (spaceXMatch && has(spacing, spaceXMatch[1])) {
+      rules.push(`.${escapeSelector(cls)} > * + * { margin-left: ${spacing[spaceXMatch[1]]}; }`)
+      continue
+    }
+
     const generated = matchLayout(cls)
     if (generated) rules.push(generated)
   }
@@ -55,6 +73,11 @@ function matchLayout(cls: string): string | null {
   if (cls === 'flex-grow-0') return `.${cls} { flex-grow: 0; }`
   if (cls === 'flex-shrink') return `.${cls} { flex-shrink: 1; }`
   if (cls === 'flex-shrink-0') return `.${cls} { flex-shrink: 0; }`
+  // Tailwind v3 shorthands
+  if (cls === 'grow') return `.${cls} { flex-grow: 1; }`
+  if (cls === 'grow-0') return `.${cls} { flex-grow: 0; }`
+  if (cls === 'shrink') return `.${cls} { flex-shrink: 1; }`
+  if (cls === 'shrink-0') return `.${cls} { flex-shrink: 0; }`
 
   // Align items
   if (cls === 'items-start') return `.${cls} { align-items: flex-start; }`

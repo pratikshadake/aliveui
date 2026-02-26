@@ -19,15 +19,22 @@ const aliveui: PluginCreator<Partial<AliveUIConfig>> = (userConfig = {}) => {
     async Once(root, { result, postcss }) {
       const classes = await scanContent(config)
 
+      // Declare layers upfront so user @layer rules always take precedence
+      const hasAliveDirective = root.some(node => node.type === 'atrule' && (node as import('postcss').AtRule).name === 'aliveui')
+      if (hasAliveDirective) {
+        const layerDecl = postcss.atRule({ name: 'layer', params: 'aliveui.base, aliveui.utilities' })
+        root.prepend(layerDecl)
+      }
+
       root.walkAtRules('aliveui', atRule => {
         const param = atRule.params.trim()
 
         if (param === 'base') {
-          const css = generateBase(config)
+          const css = `@layer aliveui.base {\n${generateBase(config)}\n}`
           const parsed = postcss.parse(css, { from: atRule.source?.input.file })
           atRule.replaceWith(parsed.nodes)
         } else if (param === 'utilities') {
-          const css = generateUtilities(classes, config)
+          const css = `@layer aliveui.utilities {\n${generateUtilities(classes, config)}\n}`
           const parsed = postcss.parse(css, { from: atRule.source?.input.file })
           atRule.replaceWith(parsed.nodes)
         } else {

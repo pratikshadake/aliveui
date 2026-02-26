@@ -110,5 +110,16 @@ function matchSizing(cls: string, spacing: Record<string, string>): string | nul
     if (has(spacing, key)) return `.${cls} { max-height: ${spacing[key]}; }`
   }
 
+  // Flex basis
+  const basisMatch = cls.match(/^basis-(.+)$/)
+  if (basisMatch) {
+    const key = basisMatch[1]
+    if (key === 'auto') return `.${cls} { flex-basis: auto; }`
+    if (key === 'full') return `.${cls} { flex-basis: 100%; }`
+    if (key === '0') return `.${cls} { flex-basis: 0px; }`
+    if (has(fractions, key)) return `.${cls} { flex-basis: ${fractions[key]}; }`
+    if (has(spacing, key)) return `.${cls} { flex-basis: ${spacing[key]}; }`
+  }
+
   return null
 }
