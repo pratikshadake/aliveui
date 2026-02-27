@@ -907,6 +907,30 @@ video {
 .alive-loop-ping   { animation: alive-ping   1s cubic-bezier(0, 0, 0.2, 1) infinite; }
 .alive-loop-bounce { animation: alive-bounce 1s infinite; }
 
+/* \u2500\u2500 Scroll-reveal (data-alive-scroll) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+
+[data-alive-scroll] {
+  opacity: 0;
+  transform: translateY(8px);
+}
+[data-alive-scroll].is-visible {
+  animation: alive-fade-up var(--alive-duration-slow) var(--alive-ease-emphasized) both;
+}
+[data-alive-scroll="fade"] {
+  opacity: 0;
+  transform: none;
+}
+[data-alive-scroll="fade"].is-visible {
+  animation: alive-fade-in var(--alive-duration-normal) var(--alive-ease-standard) both;
+}
+[data-alive-scroll="scale"] {
+  opacity: 0;
+  transform: scale(0.94);
+}
+[data-alive-scroll="scale"].is-visible {
+  animation: alive-scale-in var(--alive-duration-slow) var(--alive-ease-emphasized) both;
+}
+
 /* Reduced motion \u2014 respect system preference */
 @media (prefers-reduced-motion: reduce) {
   .alive-enter,
@@ -927,6 +951,18 @@ video {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  [data-alive-scroll],
+  [data-alive-scroll="fade"],
+  [data-alive-scroll="scale"] {
+    opacity: 1;
+    transform: none;
+  }
+  [data-alive-scroll].is-visible,
+  [data-alive-scroll="fade"].is-visible,
+  [data-alive-scroll="scale"].is-visible {
+    animation: none;
   }
 
   /* depth system \u2014 disable hover lift and active press */
