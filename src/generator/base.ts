@@ -13,6 +13,9 @@ export function generateBase(_config: ResolvedConfig): string {
 ::before,
 ::after {
   box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
 }
 
 html {
@@ -32,6 +35,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 button,
 input,
 optgroup,
@@ -41,14 +77,51 @@ textarea {
   font-size: 100%;
   font-weight: inherit;
   line-height: inherit;
+  letter-spacing: inherit;
   color: inherit;
   margin: 0;
   padding: 0;
+  background-color: transparent;
+  background-image: none;
+}
+
+button,
+[type='button'],
+[type='reset'],
+[type='submit'] {
+  -webkit-appearance: button;
+  cursor: pointer;
+}
+
+:disabled {
+  cursor: default;
 }
 
 button,
 select {
   text-transform: none;
+}
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+  vertical-align: middle;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden] {
+  display: none;
 }
 
 /* ── Design tokens ──────────────────────────────────────────────── */
@@ -248,6 +321,30 @@ select {
 .alive-loop-ping   { animation: alive-ping   1s cubic-bezier(0, 0, 0.2, 1) infinite; }
 .alive-loop-bounce { animation: alive-bounce 1s infinite; }
 
+/* ── Scroll-reveal (data-alive-scroll) ───────────────────────────── */
+
+[data-alive-scroll] {
+  opacity: 0;
+  transform: translateY(8px);
+}
+[data-alive-scroll].is-visible {
+  animation: alive-fade-up var(--alive-duration-slow) var(--alive-ease-emphasized) both;
+}
+[data-alive-scroll="fade"] {
+  opacity: 0;
+  transform: none;
+}
+[data-alive-scroll="fade"].is-visible {
+  animation: alive-fade-in var(--alive-duration-normal) var(--alive-ease-standard) both;
+}
+[data-alive-scroll="scale"] {
+  opacity: 0;
+  transform: scale(0.94);
+}
+[data-alive-scroll="scale"].is-visible {
+  animation: alive-scale-in var(--alive-duration-slow) var(--alive-ease-emphasized) both;
+}
+
 /* Reduced motion — respect system preference */
 @media (prefers-reduced-motion: reduce) {
   .alive-enter,
@@ -268,6 +365,18 @@ select {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  [data-alive-scroll],
+  [data-alive-scroll="fade"],
+  [data-alive-scroll="scale"] {
+    opacity: 1;
+    transform: none;
+  }
+  [data-alive-scroll].is-visible,
+  [data-alive-scroll="fade"].is-visible,
+  [data-alive-scroll="scale"].is-visible {
+    animation: none;
   }
 
   /* depth system — disable hover lift and active press */

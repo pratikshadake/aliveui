@@ -253,6 +253,81 @@ function activateTab(container: Element, panelId: string): void {
   activePanel?.setAttribute('aria-hidden', 'false')
 }
 
+// ── Scroll Reveal ──────────────────────────────────────────────────────────────
+
+function wireScroll(el: Element, root: Element): void {
+  const obs = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          obs.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+  )
+  obs.observe(el)
+  registerCleanup(root, () => obs.disconnect())
+}
+
+// ── Auto-Stagger ───────────────────────────────────────────────────────────────
+
+function wireStagger(container: Element): void {
+  const children = [...container.children] as HTMLElement[]
+  children.forEach((child, i) => {
+    child.style.setProperty('--alive-index', String(i))
+  })
+}
+
+// ── 3D Tilt ────────────────────────────────────────────────────────────────────
+
+function wireTilt(el: Element, root: Element): void {
+  const htmlEl = el as HTMLElement
+  const STRENGTH = 8
+
+  const moveCleanup = addListener(htmlEl, 'mousemove', (e) => {
+    const rect = htmlEl.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    htmlEl.style.transform = `perspective(800px) rotateY(${x * STRENGTH}deg) rotateX(${-y * STRENGTH}deg) scale(1.01)`
+    htmlEl.style.transition = 'transform 0.1s ease-out'
+  })
+
+  const leaveCleanup = addListener(htmlEl, 'mouseleave', () => {
+    htmlEl.style.transform = ''
+    htmlEl.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+  })
+
+  registerCleanup(root, moveCleanup)
+  registerCleanup(root, leaveCleanup)
+}
+
+// ── Magnetic Follow ────────────────────────────────────────────────────────────
+
+function wireMagnetic(el: Element, root: Element): void {
+  const htmlEl = el as HTMLElement
+  const PULL = 0.35
+
+  const moveCleanup = addListener(htmlEl, 'mousemove', (e) => {
+    const rect = htmlEl.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    const dx = (e.clientX - cx) * PULL
+    const dy = (e.clientY - cy) * PULL
+    htmlEl.style.transform = `translate(${dx}px, ${dy}px)`
+    htmlEl.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+  })
+
+  const leaveCleanup = addListener(htmlEl, 'mouseleave', () => {
+    htmlEl.style.transform = ''
+    htmlEl.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+  })
+
+  registerCleanup(root, moveCleanup)
+  registerCleanup(root, leaveCleanup)
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -274,6 +349,18 @@ export function init(root: Element = document.documentElement): void {
 
   // Tabs
   root.querySelectorAll('[data-alive-tabs]').forEach(el => wireTabs(el, root))
+
+  // Scroll reveal
+  root.querySelectorAll('[data-alive-scroll]').forEach(el => wireScroll(el, root))
+
+  // Auto-stagger children
+  root.querySelectorAll('[data-alive-stagger]').forEach(el => wireStagger(el))
+
+  // 3D tilt
+  root.querySelectorAll('[data-alive-tilt]').forEach(el => wireTilt(el, root))
+
+  // Magnetic follow
+  root.querySelectorAll('[data-alive-magnetic]').forEach(el => wireMagnetic(el, root))
 }
 
 /**
