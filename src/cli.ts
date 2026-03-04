@@ -13,7 +13,7 @@ const program = new Command()
 program
   .name('aliveui')
   .description('AliveUI — motion-first CSS framework')
-  .version('1.0.0')
+  .version('1.1.0')
 
 // ─── init ────────────────────────────────────────────────────────────────────
 program

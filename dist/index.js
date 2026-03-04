@@ -2291,6 +2291,251 @@ video {
   color: rgba(0,0,0,0.3);
   user-select: none;
 }
+
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   AliveUI Build \u2014 Display & marketing components
+   Browser frame \xB7 Phone frame \xB7 Stat card \xB7 Checklist \xB7 Dot grid
+   \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+
+/* \u2500\u2500 Browser Frame \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-browser {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+}
+.alive-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f3f3f3;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+.alive-browser-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.alive-browser-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+.alive-browser-dot:nth-child(1) { background: #ff5f57; }
+.alive-browser-dot:nth-child(2) { background: #febc2e; }
+.alive-browser-dot:nth-child(3) { background: #28c840; }
+.alive-browser-url {
+  flex: 1;
+  max-width: 280px;
+  margin: 0 auto;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.08);
+  font-size: 0.7rem;
+  color: rgba(0,0,0,0.35);
+  text-align: center;
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+.alive-browser-body {
+  overflow: hidden;
+}
+/* Dark variant */
+.alive-browser-dark {
+  border-color: rgba(255,255,255,0.1);
+  background: #0f0f0f;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+}
+.alive-browser-dark .alive-browser-bar {
+  background: #161616;
+  border-bottom-color: rgba(255,255,255,0.07);
+}
+.alive-browser-dark .alive-browser-url {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.2);
+}
+
+/* \u2500\u2500 Phone Frame \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-phone {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  border-radius: 40px;
+  border: 8px solid #1c1c1e;
+  background: #fff;
+  overflow: hidden;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.35),
+    inset 0 0 0 1px rgba(255,255,255,0.1),
+    0 0 0 1px rgba(0,0,0,0.5);
+}
+.alive-phone::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 22px;
+  background: #1c1c1e;
+  border-radius: 11px;
+  z-index: 10;
+}
+.alive-phone-screen {
+  width: 100%;
+  overflow: hidden;
+  flex: 1;
+}
+.alive-phone-dark {
+  background: #0f0f0f;
+}
+.alive-phone-dark .alive-phone-screen {
+  background: #0f0f0f;
+}
+/* Sizes */
+.alive-phone-sm  { width: 220px; border-radius: 32px; border-width: 6px; }
+.alive-phone-sm::before { width: 70px; height: 18px; border-radius: 9px; }
+.alive-phone-lg  { width: 340px; border-radius: 48px; border-width: 10px; }
+.alive-phone-lg::before { width: 110px; height: 26px; border-radius: 13px; }
+
+/* \u2500\u2500 Stat Card \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-stat {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.alive-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(0,0,0,0.4);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.alive-stat-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: rgba(0,0,0,0.9);
+  margin-bottom: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.alive-stat-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.alive-stat-up   { color: #16a34a; }
+.alive-stat-down { color: #dc2626; }
+/* Dark variant */
+.alive-stat-dark {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow: none;
+}
+.alive-stat-dark .alive-stat-label { color: rgba(255,255,255,0.35); }
+.alive-stat-dark .alive-stat-value { color: #ffffff; }
+
+/* \u2500\u2500 Feature Checklist \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+.alive-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: rgba(0,0,0,0.75);
+  line-height: 1.45;
+}
+.alive-checklist-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(74,222,128,0.15);
+  border: 1.5px solid rgba(74,222,128,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+.alive-checklist-icon::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid #16a34a;
+  border-bottom: 2px solid #16a34a;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+/* Dark variant */
+.alive-checklist-dark .alive-checklist-item { color: rgba(255,255,255,0.75); }
+.alive-checklist-dark .alive-checklist-icon {
+  background: rgba(74,222,128,0.12);
+  border-color: rgba(74,222,128,0.3);
+}
+
+/* \u2500\u2500 Dot Grid Background \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-dot-grid {
+  background-image: radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.alive-dot-grid-sm { background-size: 16px 16px; }
+.alive-dot-grid-lg { background-size: 32px 32px; }
+.alive-dot-grid-dark {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px);
+}
+
+/* \u2500\u2500 Terminal / Code Block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+.alive-terminal {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0f0f0f;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+.alive-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #161616;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.alive-terminal-body {
+  padding: 1.25rem 1.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+  overflow: auto;
+}
+.alive-terminal-prompt {
+  color: rgba(255,255,255,0.25);
+  user-select: none;
+}
+.alive-terminal-cmd { color: #60a5fa; }
+.alive-terminal-out { color: rgba(255,255,255,0.45); }
+.alive-terminal-ok  { color: #4ade80; }
+.alive-terminal-err { color: #f87171; }
 `;
 }
 
