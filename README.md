@@ -289,6 +289,58 @@ module.exports = {
 
 ---
 
+## Video Blocks
+
+AliveUI ships a complete set of CSS building blocks for product video frames. All animations trigger on render — no JavaScript required. These are separate from the UI component system and designed for fixed-size scenes (1920×1080).
+
+### Categories
+
+| Category | Classes |
+|---|---|
+| Scene backgrounds | `alive-aurora`, `alive-aurora-dark`, `alive-bokeh`, `alive-rays`, `alive-starfield`, `alive-gradient-mesh`, `alive-grid`, `alive-film-grain` |
+| Kinetic typography | `alive-kinetic-slam`, `alive-kinetic-pop`, `alive-kinetic-roll`, `alive-kinetic-stretch`, `alive-kinetic-neon`, `alive-kinetic-wave`, `alive-kinetic-gradient` |
+| Scene transitions | `alive-transition-{fade\|wipe-*\|slide-*\|zoom-*\|blur\|flip}-{out\|in}` — 13 types |
+| Lower thirds | `alive-lower-third`, `alive-ticker`, `alive-title-card-heading` |
+| Callouts | `alive-callout`, `alive-highlight-box`, `alive-zoom-lens`, `alive-step-marker`, `alive-underline-highlight` |
+| Device frames | `alive-device-phone`, `alive-device-tablet`, `alive-device-laptop`, `alive-device-browser` |
+| Charts | `alive-bar-chart`, `alive-area-fill`, `alive-line-path`, `alive-donut-arc` |
+| Cursor effects | `alive-cursor`, `alive-cursor-ring`, `alive-click-ripple`, `alive-text-cursor` |
+| Video blocks | `alive-typewriter`, `alive-toast`, `alive-metric-card`, `alive-badge-pulse`, `alive-word-reveal`, `alive-code-block`, `alive-testimonial`, `alive-marquee`, `alive-glitch` |
+| Particles & FX | `alive-confetti`, `alive-energy-ring`, `alive-meteor`, `alive-sparkle`, `alive-glow-burst`, `alive-orb` |
+| 3D scenes | `alive-3d-cube`, `alive-3d-flip`, `alive-3d-tilt`, `alive-3d-text`, `alive-3d-stack`, `alive-3d-carousel` |
+
+### Quick example — video scene
+
+```html
+<!-- Scene root (1920×1080) -->
+<div style="position:relative;width:1920px;height:1080px;overflow:hidden;background:#080810">
+
+  <!-- Animated background -->
+  <div class="alive-aurora-dark" style="position:absolute;inset:0;z-index:0"></div>
+  <div class="alive-starfield"   style="position:absolute;inset:0;z-index:1"></div>
+
+  <!-- Kinetic headline -->
+  <h1 class="alive-kinetic-slam" style="position:relative;z-index:2;color:#fff;font-size:96px">
+    Ship Faster
+  </h1>
+
+  <!-- Lower third -->
+  <div class="alive-lower-third alive-lower-third-indigo"
+       style="position:absolute;bottom:60px;left:60px;z-index:10">
+    <div class="alive-lower-third-name">AliveUI</div>
+    <div class="alive-lower-third-title">v1.2 — Motion-first CSS</div>
+  </div>
+
+  <!-- Particles -->
+  <div class="alive-energy-ring"
+       style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1"></div>
+</div>
+```
+
+Full docs and live demos: https://aliveui.dev/video-blocks
+
+---
+
 ## Design Rules
 
 These are not conventions. They are the system.
