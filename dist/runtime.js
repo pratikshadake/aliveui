@@ -268,6 +268,79 @@ function wireMagnetic(el, root) {
   registerCleanup(root, moveCleanup);
   registerCleanup(root, leaveCleanup);
 }
+function resetSceneAnimations(scene) {
+  const animated = scene.querySelectorAll(
+    '[class*="alive-enter"], [class*="alive-loop"], .alive-typewriter, .alive-typewriter-fast, .alive-typewriter-slow, .alive-word-reveal > *, .alive-kinetic-slam, .alive-metric-card, .alive-toast, .alive-badge-pulse, .alive-spotlight, .alive-code-block'
+  );
+  animated.forEach((el) => {
+    const saved = el.style.animationName;
+    el.style.animationName = "none";
+    void el.offsetHeight;
+    el.style.animationName = saved;
+  });
+}
+function wireVideoSequence(container, root) {
+  const scenes = [...container.querySelectorAll(":scope > [data-alive-scene]")];
+  if (scenes.length === 0) return;
+  const loop = container.hasAttribute("data-alive-loop");
+  let current = 0;
+  let timeoutId = null;
+  const containerEl = container;
+  if (getComputedStyle(containerEl).position === "static") {
+    containerEl.style.position = "relative";
+  }
+  containerEl.style.overflow = "hidden";
+  scenes.forEach((s) => {
+    s.style.position = "absolute";
+    s.style.inset = "0";
+    s.classList.remove("is-active");
+  });
+  function activate(index) {
+    const scene = scenes[index];
+    resetSceneAnimations(scene);
+    scene.classList.add("is-active");
+    scene.style.zIndex = "1";
+  }
+  function scheduleNext(fromIndex) {
+    const scene = scenes[fromIndex];
+    const duration = parseInt(scene.getAttribute("data-alive-duration") ?? "3000", 10);
+    timeoutId = setTimeout(() => {
+      const nextIndex = fromIndex + 1;
+      const toIndex = nextIndex >= scenes.length ? loop ? 0 : -1 : nextIndex;
+      if (toIndex === -1) return;
+      doTransition(fromIndex, toIndex);
+    }, duration);
+  }
+  function doTransition(fromIndex, toIndex) {
+    const outScene = scenes[fromIndex];
+    const inScene = scenes[toIndex];
+    const transType = outScene.getAttribute("data-alive-transition") ?? "fade";
+    const transDur = parseInt(outScene.getAttribute("data-alive-trans-duration") ?? "600", 10);
+    const outClass = `alive-transition-${transType}-out`;
+    const inClass = `alive-transition-${transType}-in`;
+    outScene.style.setProperty("--alive-tr-dur", `${transDur}ms`);
+    inScene.style.setProperty("--alive-tr-dur", `${transDur}ms`);
+    outScene.style.zIndex = "2";
+    outScene.classList.add(outClass);
+    inScene.style.zIndex = "1";
+    resetSceneAnimations(inScene);
+    inScene.classList.add("is-active", inClass);
+    timeoutId = setTimeout(() => {
+      outScene.classList.remove("is-active", outClass);
+      outScene.style.zIndex = "";
+      outScene.style.removeProperty("--alive-tr-dur");
+      inScene.classList.remove(inClass);
+      inScene.style.removeProperty("--alive-tr-dur");
+      current = toIndex;
+      scheduleNext(current);
+    }, transDur);
+  }
+  activate(current);
+  scheduleNext(current);
+  registerCleanup(root, () => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
 function init(root = document.documentElement) {
   root.querySelectorAll("[data-alive-accordion]").forEach((el) => wireAccordion(el, root));
   root.querySelectorAll("[data-alive-modal]").forEach((el) => wireModal(el, root));
@@ -278,6 +351,7 @@ function init(root = document.documentElement) {
   root.querySelectorAll("[data-alive-stagger]").forEach((el) => wireStagger(el));
   root.querySelectorAll("[data-alive-tilt]").forEach((el) => wireTilt(el, root));
   root.querySelectorAll("[data-alive-magnetic]").forEach((el) => wireMagnetic(el, root));
+  root.querySelectorAll("[data-alive-sequence]").forEach((el) => wireVideoSequence(el, root));
 }
 function destroy(root = document.documentElement) {
   const cleanups = cleanupRegistry.get(root) ?? [];

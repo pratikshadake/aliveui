@@ -328,6 +328,125 @@ function wireMagnetic(el: Element, root: Element): void {
   registerCleanup(root, leaveCleanup)
 }
 
+// ── Video Scene Sequencer ──────────────────────────────────────────────────────
+
+/**
+ * Force-restart CSS animations on all animated children of a scene element.
+ * This ensures stagger delays are relative to scene activation, not page load.
+ */
+function resetSceneAnimations(scene: HTMLElement): void {
+  const animated = scene.querySelectorAll<HTMLElement>(
+    '[class*="alive-enter"], [class*="alive-loop"], ' +
+    '.alive-typewriter, .alive-typewriter-fast, .alive-typewriter-slow, ' +
+    '.alive-word-reveal > *, .alive-kinetic-slam, ' +
+    '.alive-metric-card, .alive-toast, .alive-badge-pulse, ' +
+    '.alive-spotlight, .alive-code-block',
+  )
+  animated.forEach(el => {
+    const saved = el.style.animationName
+    el.style.animationName = 'none'
+    void el.offsetHeight // force reflow — restarts animation from t=0
+    el.style.animationName = saved
+  })
+}
+
+/**
+ * Wire a [data-alive-sequence] container.
+ *
+ * Markup:
+ *   <div data-alive-sequence data-alive-loop style="position:relative; width:800px; height:500px;">
+ *     <div data-alive-scene data-alive-duration="3000" data-alive-transition="wipe-left">…</div>
+ *     <div data-alive-scene data-alive-duration="2500" data-alive-transition="fade">…</div>
+ *   </div>
+ *
+ * Scene attributes:
+ *   data-alive-duration        — how long to show the scene (ms, default 3000)
+ *   data-alive-transition      — transition type (default "fade"; matches alive-transition-* classes)
+ *   data-alive-trans-duration  — transition animation duration (ms, default 600)
+ *
+ * Sequence attributes:
+ *   data-alive-loop            — loop back to the first scene after the last
+ */
+function wireVideoSequence(container: Element, root: Element): void {
+  const scenes = [...container.querySelectorAll<HTMLElement>(':scope > [data-alive-scene]')]
+  if (scenes.length === 0) return
+
+  const loop = container.hasAttribute('data-alive-loop')
+  let current = 0
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  const containerEl = container as HTMLElement
+  if (getComputedStyle(containerEl).position === 'static') {
+    containerEl.style.position = 'relative'
+  }
+  containerEl.style.overflow = 'hidden'
+
+  scenes.forEach(s => {
+    s.style.position = 'absolute'
+    s.style.inset = '0'
+    s.classList.remove('is-active')
+  })
+
+  function activate(index: number): void {
+    const scene = scenes[index]
+    resetSceneAnimations(scene)
+    scene.classList.add('is-active')
+    scene.style.zIndex = '1'
+  }
+
+  function scheduleNext(fromIndex: number): void {
+    const scene = scenes[fromIndex]
+    const duration = parseInt(scene.getAttribute('data-alive-duration') ?? '3000', 10)
+
+    timeoutId = setTimeout(() => {
+      const nextIndex = fromIndex + 1
+      const toIndex = nextIndex >= scenes.length ? (loop ? 0 : -1) : nextIndex
+      if (toIndex === -1) return
+      doTransition(fromIndex, toIndex)
+    }, duration)
+  }
+
+  function doTransition(fromIndex: number, toIndex: number): void {
+    const outScene = scenes[fromIndex]
+    const inScene = scenes[toIndex]
+    const transType = outScene.getAttribute('data-alive-transition') ?? 'fade'
+    const transDur = parseInt(outScene.getAttribute('data-alive-trans-duration') ?? '600', 10)
+
+    const outClass = `alive-transition-${transType}-out`
+    const inClass = `alive-transition-${transType}-in`
+
+    // Sync CSS animation duration with the JS timer
+    outScene.style.setProperty('--alive-tr-dur', `${transDur}ms`)
+    inScene.style.setProperty('--alive-tr-dur', `${transDur}ms`)
+
+    // Outgoing goes on top (required for wipe/clip-path transitions)
+    outScene.style.zIndex = '2'
+    outScene.classList.add(outClass)
+
+    // Activate incoming beneath, reset its child animations
+    inScene.style.zIndex = '1'
+    resetSceneAnimations(inScene)
+    inScene.classList.add('is-active', inClass)
+
+    timeoutId = setTimeout(() => {
+      outScene.classList.remove('is-active', outClass)
+      outScene.style.zIndex = ''
+      outScene.style.removeProperty('--alive-tr-dur')
+      inScene.classList.remove(inClass)
+      inScene.style.removeProperty('--alive-tr-dur')
+      current = toIndex
+      scheduleNext(current)
+    }, transDur)
+  }
+
+  activate(current)
+  scheduleNext(current)
+
+  registerCleanup(root, () => {
+    if (timeoutId) clearTimeout(timeoutId)
+  })
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -361,6 +480,9 @@ export function init(root: Element = document.documentElement): void {
 
   // Magnetic follow
   root.querySelectorAll('[data-alive-magnetic]').forEach(el => wireMagnetic(el, root))
+
+  // Video scene sequencer
+  root.querySelectorAll('[data-alive-sequence]').forEach(el => wireVideoSequence(el, root))
 }
 
 /**

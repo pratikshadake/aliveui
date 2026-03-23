@@ -2618,14 +2618,14 @@ video {
   gap: 10px;
   padding: 12px 18px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.08);
+  background: var(--alive-toast-bg, rgba(255,255,255,0.08));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid var(--alive-toast-border, rgba(255,255,255,0.12));
   box-shadow: 0 8px 32px rgba(0,0,0,0.24), 0 1px 0 rgba(255,255,255,0.06) inset;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--alive-toast-color, #fff);
   animation: alive-toast-loop 5s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
 }
 .alive-toast-icon {
@@ -2637,7 +2637,8 @@ video {
   justify-content: center;
   flex-shrink: 0;
   font-size: 14px;
-  background: rgba(255,255,255,0.1);
+  background: var(--alive-toast-icon-bg, rgba(255,255,255,0.1));
+  color: var(--alive-toast-icon-color, currentColor);
 }
 .alive-toast-title { font-weight: 600; font-size: 0.875rem; }
 .alive-toast-body  { font-size: 0.8125rem; opacity: 0.65; margin-top: 1px; }
@@ -2671,7 +2672,7 @@ video {
 .alive-typewriter {
   display: inline-block;
   white-space: nowrap;
-  border-right: 2px solid currentColor;
+  border-right: 2px solid var(--alive-typewriter-cursor, currentColor);
   animation:
     alive-type-in 2s steps(40, end) both,
     alive-blink 0.8s step-end infinite;
@@ -2870,7 +2871,7 @@ video {
   position: absolute;
   inset: -24px;
   border-radius: inherit;
-  background: radial-gradient(ellipse at center, rgba(99,102,241,0.25) 0%, rgba(99,102,241,0.08) 50%, transparent 70%);
+  background: radial-gradient(ellipse at center, var(--alive-spotlight-color, rgba(99,102,241,0.25)) 0%, var(--alive-spotlight-color-mid, rgba(99,102,241,0.08)) 50%, transparent 70%);
   animation: alive-spotlight-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   pointer-events: none;
   z-index: -1;
@@ -2880,8 +2881,8 @@ video {
   position: absolute;
   inset: -4px;
   border-radius: inherit;
-  border: 1px solid rgba(99,102,241,0.4);
-  box-shadow: 0 0 24px rgba(99,102,241,0.3), 0 0 48px rgba(99,102,241,0.15);
+  border: 1px solid var(--alive-spotlight-ring-color, rgba(99,102,241,0.4));
+  box-shadow: 0 0 24px var(--alive-spotlight-glow, rgba(99,102,241,0.3)), 0 0 48px var(--alive-spotlight-glow-far, rgba(99,102,241,0.15));
   animation: alive-spotlight-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   pointer-events: none;
 }
@@ -2907,6 +2908,9 @@ video {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  background: var(--alive-badge-bg, transparent);
+  color: var(--alive-badge-color, inherit);
+  border: 1px solid var(--alive-badge-border, transparent);
   animation: alive-badge-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .alive-badge-pulse .alive-badge-dot {
@@ -2915,6 +2919,7 @@ video {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--alive-badge-dot, currentColor);
 }
 .alive-badge-pulse .alive-badge-dot::before {
   content: '';
@@ -3131,8 +3136,8 @@ video {
   gap: 8px;
   padding: 20px 24px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--alive-metric-bg, rgba(255,255,255,0.04));
+  border: 1px solid var(--alive-metric-border, rgba(255,255,255,0.08));
   animation: alive-metric-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   min-width: 160px;
 }
@@ -3141,14 +3146,14 @@ video {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: rgba(255,255,255,0.4);
+  color: var(--alive-metric-label-color, rgba(255,255,255,0.4));
 }
 .alive-metric-card-value {
   font-size: 2.25rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #fff;
+  color: var(--alive-metric-value-color, #fff);
 }
 .alive-metric-card-change {
   display: inline-flex;
@@ -3172,7 +3177,7 @@ video {
 .alive-metric-card-bar-fill {
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6, #6366f1);
+  background: linear-gradient(90deg, var(--alive-metric-accent, #6366f1), var(--alive-metric-accent-2, #8b5cf6), var(--alive-metric-accent, #6366f1));
   background-size: 200% auto;
   transform-origin: left;
   animation:
@@ -4506,6 +4511,32 @@ video {
 .alive-meteor:nth-child(2) { top: 25%; left: 30%; animation-delay: 0.8s; animation-duration: 1.8s; width: 40px; }
 .alive-meteor:nth-child(3) { top: 5%;  left: 60%; animation-delay: 1.5s; animation-duration: 2.5s; }
 .alive-meteor:nth-child(4) { top: 40%; left: 75%; animation-delay: 0.4s; animation-duration: 1.6s; width: 80px; }
+
+/* \u2500\u2500 Scene Sequencer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   Pair with [data-alive-sequence] + [data-alive-scene] attributes.
+   The runtime (./runtime) drives is-active and transition classes.
+   See: data-alive-duration, data-alive-transition, data-alive-loop.
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
+[data-alive-sequence] {
+  position: relative;
+  overflow: hidden;
+}
+[data-alive-scene] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+[data-alive-scene].is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+/* Outgoing scene (has a -out class) must stay visible during the transition */
+[data-alive-scene][class*="-out"] {
+  opacity: 1;
+  z-index: 2;
+}
 `;
 }
 
