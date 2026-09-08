@@ -1,8 +1,16 @@
 # AliveUI
 
+[![npm version](https://img.shields.io/npm/v/@alivecss/aliveui.svg)](https://www.npmjs.com/package/@alivecss/aliveui)
+[![npm downloads](https://img.shields.io/npm/dm/@alivecss/aliveui.svg)](https://www.npmjs.com/package/@alivecss/aliveui)
+[![license](https://img.shields.io/npm/l/@alivecss/aliveui.svg)](./LICENSE)
+
 **Motion-first CSS framework. Every surface has depth. Every interaction is alive.**
 
+Live demo: **[aliveui.dev](https://aliveui.dev)** · Published on npm as [`@alivecss/aliveui`](https://www.npmjs.com/package/@alivecss/aliveui) — AliveUI is the project name, `@alivecss` is the npm org.
+
 Modern interfaces are visually structured but temporally dead. AliveUI treats motion, depth, and interaction feedback as first-class primitives — encoded directly into the utility system, not bolted on as an afterthought.
+
+![AliveUI demo](./assets/demo.gif)
 
 ---
 
@@ -352,6 +360,24 @@ These are not conventions. They are the system.
 **No infinite loops.** No parallax. No scroll-triggered chaos.
 
 **Depth determines motion behavior.** `d1` does color shifts. `d2` does elevation. `d3` does entrances.
+
+---
+
+## Why not Tailwind + Motion?
+
+The obvious alternative is Tailwind CSS plus a JS animation library (Framer Motion / Motion One) bolted on top. That works, but it's two systems that don't know about each other: Tailwind has no concept of motion, so every hover, entrance, and elevation state gets hand-wired in JS or repeated `transition-*` utility soup, and the timing/easing values drift apart component by component.
+
+| | Tailwind + Motion | AliveUI |
+|---|---|---|
+| Motion awareness | Bolted on in JS, per component | Built into the utility system itself |
+| Color/opacity transitions | Manual `transition-colors duration-200` on every element | Automatic — inherited from depth context (`d1`/`d2`/`d3`) |
+| Timing consistency | Whatever each dev/component picks | 3 durations, 3 easings, enforced by the system |
+| Entrance/stagger animations | JS animation library + refs/hooks | `alive-enter` + `--alive-index`, pure CSS |
+| Runtime JS required | Yes, for anything beyond CSS transitions | Optional — only for scroll reveal, tilt, magnetic, and other behavioral extras |
+| Bundle cost | Tailwind + a full animation library | PostCSS plugin output, no runtime required for core motion |
+| Class familiarity | — | Utility names intentionally mirror Tailwind, so migration is low-friction |
+
+AliveUI isn't trying to replace Tailwind's entire utility surface — it's trying to replace the "Tailwind + a motion library" combo specifically, by making motion a first-class primitive instead of an afterthought wired in separately.
 
 ---
 

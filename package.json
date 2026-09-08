@@ -8,8 +8,20 @@
     "motion",
     "design-system",
     "ui",
-    "postcss"
+    "postcss",
+    "aliveui",
+    "tailwind-alternative",
+    "animation",
+    "css-framework"
   ],
+  "homepage": "https://aliveui.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pratikshadake/aliveui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pratikshadake/aliveui/issues"
+  },
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
